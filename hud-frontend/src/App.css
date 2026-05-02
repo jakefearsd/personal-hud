@@ -93,6 +93,82 @@ body {
   color: var(--text-primary);
 }
 
+/* Observability Styles */
+.pipeline-table-container {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.pipeline-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.pipeline-table th {
+  background-color: #21262d;
+  padding: 1rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pipeline-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: #21262d;
+}
+
+.status-success .status-badge { color: var(--success-color); }
+.status-pending .status-badge { color: #e3b341; }
+.status-failed .status-badge { color: var(--error-color); }
+
+.error-text {
+  color: var(--error-color);
+  font-family: monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+}
+
+.success-text {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
 .app-content {
   flex: 1;
   padding: 2rem;

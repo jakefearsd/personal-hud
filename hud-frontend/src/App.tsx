@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BriefingView } from './components/BriefingView'
+import { ObservabilityView } from './components/ObservabilityView'
 import './App.css'
 
 interface NewsArticle {
@@ -14,11 +15,11 @@ interface DailyBriefing {
   markdownContent: string;
 }
 
-type MainTab = 'news' | 'investments' | 'config';
+type MainTab = 'news' | 'theaters' | 'investments' | 'config' | 'observability';
 type NewsTab = 'briefing' | 'live';
 
 function App() {
-  const [activeMainTab, setActiveMainTab] = useState<MainTab>('news')
+  const [activeMainTab, setActiveMainTab] = useState<MainTab>('theaters')
   const [activeNewsTab, setActiveNewsTab] = useState<NewsTab>('briefing')
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [briefings, setBriefings] = useState<DailyBriefing[]>([])
@@ -26,11 +27,10 @@ function App() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (activeMainTab === 'news') {
-      if (activeNewsTab === 'live') {
+    if (activeMainTab === 'news' || activeMainTab === 'theaters') {
+      fetchLatestBriefings()
+      if (activeMainTab === 'news' && activeNewsTab === 'live') {
         fetchLiveNews()
-      } else {
-        fetchLatestBriefings()
       }
     }
   }, [activeMainTab, activeNewsTab])
@@ -85,6 +85,12 @@ function App() {
               News
             </button>
             <button 
+              className={activeMainTab === 'theaters' ? 'active' : ''} 
+              onClick={() => setActiveMainTab('theaters')}
+            >
+              Theaters
+            </button>
+            <button 
               className={activeMainTab === 'investments' ? 'active' : ''} 
               onClick={() => setActiveMainTab('investments')}
             >
@@ -95,6 +101,12 @@ function App() {
               onClick={() => setActiveMainTab('config')}
             >
               Config
+            </button>
+            <button 
+              className={activeMainTab === 'observability' ? 'active' : ''} 
+              onClick={() => setActiveMainTab('observability')}
+            >
+              Observability
             </button>
           </nav>
         </div>
@@ -124,7 +136,11 @@ function App() {
           <>
             {loading && <div className="loader">Processing analytics...</div>}
             {activeNewsTab === 'briefing' ? (
-              <BriefingView briefings={briefings} loading={loading} onTrigger={triggerBriefing} />
+              <BriefingView 
+                briefings={briefings.filter(b => !['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
+                loading={loading} 
+                onTrigger={triggerBriefing} 
+              />
             ) : (
               <div className="live-feed">
                 <h2>Latest Financial Headlines</h2>
@@ -142,6 +158,14 @@ function App() {
           </>
         )}
 
+        {activeMainTab === 'theaters' && (
+           <BriefingView 
+             briefings={briefings.filter(b => ['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
+             loading={loading} 
+             onTrigger={triggerBriefing} 
+           />
+        )}
+
         {activeMainTab === 'investments' && (
           <div className="placeholder-view">
             <h2>Investment Portfolio</h2>
@@ -154,6 +178,10 @@ function App() {
             <h2>System Configuration</h2>
             <p>Administrative and scraping configuration module coming soon.</p>
           </div>
+        )}
+
+        {activeMainTab === 'observability' && (
+          <ObservabilityView />
         )}
       </main>
     </div>

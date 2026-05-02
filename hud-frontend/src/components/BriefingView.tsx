@@ -16,10 +16,12 @@ interface Props {
 
 const categoryTitles: Record<BriefingCategory, string> = {
   'WORLD_NEWS': 'World News',
-  'WORLD_CONFLICTS': 'World Conflicts (ISW Analysis)',
   'US_NEWS': 'US News',
   'FINANCE': 'Financial Briefing',
-  'TECHNOLOGY': 'Technology & AI'
+  'TECHNOLOGY': 'Technology & AI',
+  'GLOBAL_SITREP': 'Global SITREP (Multi-Theater)',
+  'THEATER_UKRAINE': 'European Theater: Ukraine',
+  'THEATER_MIDDLE_EAST': 'Middle East Theater'
 };
 
 export const BriefingView = ({ briefings, loading, onTrigger }: Props) => {

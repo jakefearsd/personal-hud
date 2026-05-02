@@ -70,15 +70,29 @@ public class PlaywrightScraperService {
     }
 
     public List<String> getIswLinks(int limit) {
-        String url = "https://www.understandingwar.org/";
-        // Target daily assessments and conflict updates
-        String iswSelector = "a[href*='offensive-campaign-assessment'], a[href*='conflict-update'], a[href*='ukraine-conflict-updates']";
-        List<String> links = scrapeLinks(url, iswSelector, "https://www.understandingwar.org", 15);
+        // Broaden the keywords to capture deep tactical reports
+        String iswSelector = "a[href*='offensive-campaign-assessment'], " +
+                             "a[href*='conflict-update'], " +
+                             "a[href*='ukraine-conflict-updates'], " +
+                             "a[href*='iran-update'], " +
+                             "a[href*='israel-hamas-war-update']";
         
+        // Stage 1: Check homepage for latest featured reports
+        System.out.println("ISW Discovery Stage 1: Homepage");
+        List<String> links = scrapeLinks("https://www.understandingwar.org/", iswSelector, "https://www.understandingwar.org", 20);
+        
+        // Stage 2: Fallback to the main publications hub if homepage is thin
+        if (links.size() < 2) {
+            System.out.println("ISW Discovery Stage 2: Publications Hub");
+            List<String> hubLinks = scrapeLinks("https://www.understandingwar.org/publications", iswSelector, "https://www.understandingwar.org", 20);
+            links.addAll(hubLinks);
+        }
+
         return links.stream()
                 .filter(l -> !l.contains("/about"))
                 .filter(l -> !l.contains("/terms"))
                 .filter(l -> !l.contains("/privacy"))
+                .filter(l -> !l.contains("/analysis")) // Exclude archives
                 .distinct()
                 .limit(limit)
                 .collect(Collectors.toList());

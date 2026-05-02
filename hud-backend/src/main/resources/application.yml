@@ -18,6 +18,6 @@ langchain4j:
     chat-model:
       base-url: http://inference.jakefear.com:11434
       model-name: gemma4:e4b
-      num-ctx: 32768
+      num-ctx: 65536
       timeout: PT10M
       temperature: 0.0

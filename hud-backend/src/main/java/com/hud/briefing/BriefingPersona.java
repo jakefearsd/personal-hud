@@ -40,13 +40,36 @@ public record BriefingPersona(String name, String role, String focus, String ins
         "STRICTLY focus on the tactical ground situation. Report on gains, losses, and kinetic shifts."
     );
 
+    public static final BriefingPersona GLOBAL_SITREP = new BriefingPersona(
+        "Theater Command Analyst",
+        "Senior Joint Operations Officer",
+        "Cross-theater strategic overlap and global stability",
+        "Synthesize multiple conflict zones into a single high-level strategic overview."
+    );
+
+    public static final BriefingPersona THEATER_UKRAINE = new BriefingPersona(
+        "Ukraine Ops Officer",
+        "Lead Analyst, European Theater",
+        "Deep strikes, innovation, and territorial momentum",
+        "Extract specific tactical gains, strike locations, and evidence of technological adaptation."
+    );
+
+    public static final BriefingPersona THEATER_MIDDLE_EAST = new BriefingPersona(
+        "CENTCOM Intelligence Chief",
+        "Regional Stability Advisor",
+        "Proxy movements, escalation cycles, and tactical posture",
+        "Analyze the 'Axis of Resistance' activities and Israeli/Coalition tactical responses."
+    );
+
     public static BriefingPersona of(BriefingCategory category) {
         return switch (category) {
             case WORLD_NEWS -> WORLD_NEWS;
             case US_NEWS -> US_NEWS;
             case FINANCE -> FINANCE;
             case TECHNOLOGY -> TECHNOLOGY;
-            case WORLD_CONFLICTS -> WORLD_CONFLICTS;
+            case GLOBAL_SITREP -> GLOBAL_SITREP;
+            case THEATER_UKRAINE -> THEATER_UKRAINE;
+            case THEATER_MIDDLE_EAST -> THEATER_MIDDLE_EAST;
         };
     }
 }
