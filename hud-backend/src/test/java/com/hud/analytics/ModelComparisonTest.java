@@ -9,9 +9,9 @@ import ai.djl.modality.nlp.translator.ZeroShotClassificationOutput;
 import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.TranslateException;
+import com.hud.briefing.DynamicLlmService;
 import com.hud.news.NewsArticle;
 import com.hud.news.PlaywrightScraperService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
 import net.dankito.readability4j.Article;
 import net.dankito.readability4j.Readability4J;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ import java.util.List;
 class ModelComparisonTest {
 
     @Autowired
-    private ChatLanguageModel gemmaModel;
+    private DynamicLlmService dynamicLlmService;
 
     @Autowired
     private PlaywrightScraperService scraperService;
@@ -37,6 +37,10 @@ class ModelComparisonTest {
     @Test
     void compareGemmaAndDjlForAdDetection() throws Exception {
         System.out.println("=== STARTING MODEL COMPARISON ===");
+        
+        var models = dynamicLlmService.getActiveModels();
+        if (models.isEmpty()) return;
+        var gemmaModel = models.get(0).model();
         
         // 1. Get articles
         List<NewsArticle> articles = scraperService.scrapeYahooFinance();

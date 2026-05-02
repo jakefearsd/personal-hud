@@ -17,14 +17,17 @@ public class DailyBriefing {
     @Enumerated(EnumType.STRING)
     private BriefingCategory category;
 
+    private String modelName;
+
     @Column(columnDefinition = "TEXT")
     private String markdownContent;
 
     public DailyBriefing() {}
 
-    public DailyBriefing(java.time.LocalDateTime generatedAt, BriefingCategory category, String markdownContent) {
+    public DailyBriefing(java.time.LocalDateTime generatedAt, BriefingCategory category, String modelName, String markdownContent) {
         this.generatedAt = generatedAt;
         this.category = category;
+        this.modelName = modelName;
         this.markdownContent = markdownContent;
     }
 
@@ -35,6 +38,8 @@ public class DailyBriefing {
     public void setGeneratedAt(java.time.LocalDateTime generatedAt) { this.generatedAt = generatedAt; }
     public BriefingCategory getCategory() { return category; }
     public void setCategory(BriefingCategory category) { this.category = category; }
+    public String getModelName() { return modelName; }
+    public void setModelName(String modelName) { this.modelName = modelName; }
     public String getMarkdownContent() { return markdownContent; }
     public void setMarkdownContent(String markdownContent) { this.markdownContent = markdownContent; }
 }

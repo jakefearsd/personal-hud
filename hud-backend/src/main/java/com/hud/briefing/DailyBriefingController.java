@@ -18,7 +18,10 @@ public class DailyBriefingController {
     }
 
     @GetMapping("/latest")
-    public List<DailyBriefing> getLatestBriefings() {
+    public List<DailyBriefing> getLatestBriefings(@RequestParam(required = false) String modelName) {
+        if (modelName != null && !modelName.isBlank()) {
+            return repository.findByModelToday(modelName);
+        }
         return repository.findLatestToday();
     }
 

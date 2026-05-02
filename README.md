@@ -70,3 +70,6 @@ If you prefer to run things outside of Docker:
 - `Dockerfile`: Multi-stage build for the application.
 - `docker-compose.yml`: Orchestration for app and DB.
 - `GEMINI.md`: Detailed project architecture and conventions.
+
+## Technical Documentation
+- **[Model Configuration (Multi-Brain)](docs/ModelConfig.md)**: Guide on configuring and switching between local (Ollama) and remote (Gemini) LLMs.

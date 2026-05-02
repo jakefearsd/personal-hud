@@ -10,5 +10,8 @@ public interface DailyBriefingRepository extends JpaRepository<DailyBriefing, Lo
     @Query("SELECT b FROM DailyBriefing b WHERE CAST(b.generatedAt AS date) = CURRENT_DATE")
     List<DailyBriefing> findLatestToday();
 
-    void deleteByCategoryAndGeneratedAtAfter(BriefingCategory category, java.time.LocalDateTime after);
+    @Query("SELECT b FROM DailyBriefing b WHERE CAST(b.generatedAt AS date) = CURRENT_DATE AND b.modelName = :modelName")
+    List<DailyBriefing> findByModelToday(String modelName);
+
+    void deleteByCategoryAndModelNameAndGeneratedAtAfter(BriefingCategory category, String modelName, java.time.LocalDateTime after);
 }

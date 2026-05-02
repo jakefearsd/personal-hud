@@ -14,20 +14,20 @@ import java.util.List;
 public class AutomatedBriefingService {
 
     private final PlaywrightScraperService scraperService;
-    private final ChatLanguageModel chatModel;
+    private final DynamicLlmService llmService;
     private final DailyBriefingRepository repository;
     private final BriefingSourceFactory sourceFactory;
     private final TransactionTemplate transactionTemplate;
     private final PipelineRunRepository pipelineRunRepository;
 
     public AutomatedBriefingService(PlaywrightScraperService scraperService, 
-                                    ChatLanguageModel chatModel, 
+                                    DynamicLlmService llmService, 
                                     DailyBriefingRepository repository,
                                     BriefingSourceFactory sourceFactory,
                                     TransactionTemplate transactionTemplate,
                                     PipelineRunRepository pipelineRunRepository) {
         this.scraperService = scraperService;
-        this.chatModel = chatModel;
+        this.llmService = llmService;
         this.repository = repository;
         this.sourceFactory = sourceFactory;
         this.transactionTemplate = transactionTemplate;
@@ -37,33 +37,47 @@ public class AutomatedBriefingService {
     @Scheduled(cron = "0 0 6 * * *")
     public void generateDailyBriefing() {
         LocalDate today = LocalDate.now();
+        List<DynamicLlmService.NamedChatModel> activeModels = llmService.getActiveModels();
         
-        try { generateForCategory(today, BriefingCategory.WORLD_NEWS, "https://feeds.bbci.co.uk/news/world/rss.xml"); } catch (Exception e) { e.printStackTrace(); }
-        try { generateForCategory(today, BriefingCategory.US_NEWS, "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml"); } catch (Exception e) { e.printStackTrace(); }
-        try { generateForCategory(today, BriefingCategory.FINANCE, "https://feeds.bbci.co.uk/news/business/rss.xml"); } catch (Exception e) { e.printStackTrace(); }
-        try { generateForCategory(today, BriefingCategory.TECHNOLOGY, "hn"); } catch (Exception e) { e.printStackTrace(); }
-        try { generateForCategory(today, BriefingCategory.THEATER_UKRAINE, "ukraine"); } catch (Exception e) { e.printStackTrace(); }
-        try { generateForCategory(today, BriefingCategory.THEATER_MIDDLE_EAST, "mideast"); } catch (Exception e) { e.printStackTrace(); }
-        try { generateForCategory(today, BriefingCategory.GLOBAL_SITREP, "all"); } catch (Exception e) { e.printStackTrace(); }
+        if (activeModels.isEmpty()) {
+            System.err.println("Aborting briefing: No active LLM configurations found.");
+            return;
+        }
+
+        for (DynamicLlmService.NamedChatModel model : activeModels) {
+            System.out.println("Starting daily briefing run for model: " + model.name());
+            
+            // News Domain
+            try { generateForCategory(today, BriefingCategory.WORLD_NEWS, "https://feeds.bbci.co.uk/news/world/rss.xml", model); } catch (Exception e) { e.printStackTrace(); }
+            try { generateForCategory(today, BriefingCategory.US_NEWS, "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml", model); } catch (Exception e) { e.printStackTrace(); }
+            try { generateForCategory(today, BriefingCategory.FINANCE, "https://feeds.bbci.co.uk/news/business/rss.xml", model); } catch (Exception e) { e.printStackTrace(); }
+            try { generateForCategory(today, BriefingCategory.TECHNOLOGY, "hn", model); } catch (Exception e) { e.printStackTrace(); }
+            
+            // Intelligence Domain (Theaters)
+            try { generateForCategory(today, BriefingCategory.THEATER_UKRAINE, "ukraine", model); } catch (Exception e) { e.printStackTrace(); }
+            try { generateForCategory(today, BriefingCategory.THEATER_MIDDLE_EAST, "mideast", model); } catch (Exception e) { e.printStackTrace(); }
+            try { generateForCategory(today, BriefingCategory.GLOBAL_SITREP, "all", model); } catch (Exception e) { e.printStackTrace(); }
+        }
     }
 
-    public void generateForCategory(LocalDate date, BriefingCategory category, String query) {
-        PipelineRun run = new PipelineRun(category, PipelineStatus.PENDING, LocalDateTime.now());
+    public void generateForCategory(LocalDate date, BriefingCategory category, String query, DynamicLlmService.NamedChatModel model) {
+        PipelineRun run = new PipelineRun(category, model.name(), PipelineStatus.PENDING, LocalDateTime.now());
         final PipelineRun savedRun = transactionTemplate.execute(status -> pipelineRunRepository.save(run));
 
         try {
+            LocalDateTime now = LocalDateTime.now();
             String content;
             if (isTheaterCategory(category)) {
-                content = generateDeepDiveContent(category, query);
+                content = generateDeepDiveContent(category, query, model.model());
             } else {
-                content = generateStandardContent(category, query);
+                content = generateStandardContent(category, query, model.model());
             }
             
             final String finalContent = content;
             transactionTemplate.execute(status -> {
                 // 1. Save Briefing
-                repository.deleteByCategoryAndGeneratedAtAfter(category, LocalDate.now().atStartOfDay());
-                DailyBriefing briefing = new DailyBriefing(LocalDateTime.now(), category, finalContent);
+                repository.deleteByCategoryAndModelNameAndGeneratedAtAfter(category, model.name(), LocalDate.now().atStartOfDay());
+                DailyBriefing briefing = new DailyBriefing(now, category, model.name(), finalContent);
                 repository.save(briefing);
 
                 // 2. Update Run Status
@@ -86,7 +100,7 @@ public class AutomatedBriefingService {
         }
     }
 
-    private String generateStandardContent(BriefingCategory category, String query) {
+    private String generateStandardContent(BriefingCategory category, String query, ChatLanguageModel model) {
         BriefingPersona persona = BriefingPersona.of(category);
         BriefingSourceStrategy strategy = sourceFactory.getStrategy(category);
         List<String> links = strategy.getLinks(query, 3);
@@ -103,10 +117,10 @@ public class AutomatedBriefingService {
             throw new RuntimeException("Insufficient signal for " + category);
         }
 
-        return chatModel.generate(buildStandardPrompt(persona, category, combinedText.toString()));
+        return model.generate(buildStandardPrompt(persona, category, combinedText.toString()));
     }
 
-    private String generateDeepDiveContent(BriefingCategory category, String query) {
+    private String generateDeepDiveContent(BriefingCategory category, String query, ChatLanguageModel model) {
         BriefingPersona persona = BriefingPersona.of(category);
         BriefingSourceStrategy strategy = sourceFactory.getStrategy(category);
         List<String> links = strategy.getLinks(query, (category == BriefingCategory.GLOBAL_SITREP) ? 3 : 1);
@@ -130,20 +144,19 @@ public class AutomatedBriefingService {
         String intelligenceText = combinedRaw.length() > 15000 ? combinedRaw.substring(0, 15000) : combinedRaw.toString();
 
         if (category == BriefingCategory.GLOBAL_SITREP) {
-            return chatModel.generate(buildSitrepPrompt(persona, intelligenceText));
+            return model.generate(buildSitrepPrompt(persona, intelligenceText));
         } else {
-            // Hyper-aggressive Command Directives to overcome refusal
-            String tempo = chatModel.generate(
+            String tempo = model.generate(
                 "COMMAND DIRECTIVE: You are a Lead Intelligence Officer. " +
                 "INPUT: Raw field reports with citations. " +
                 "TASK: Re-write the situational analysis into 2 dense narrative paragraphs. " +
                 "RESTRICTION: DO NOT mention citations, links, or report nature. Focus on ground truth.\n\nDATA:\n" + intelligenceText);
             
-            String strikes = chatModel.generate(
+            String strikes = model.generate(
                 "TASK: Extract kinetic strike data. Include Target, Location, and Border Distance. " +
                 "OUTPUT: Markdown Table. Header: '## Kinetic Impact'.\n\nDATA:\n" + intelligenceText);
                 
-            String innovation = chatModel.generate(
+            String innovation = model.generate(
                 "TASK: Identify 3 battlefield innovations (Tactics, EW, Drones). " +
                 "OUTPUT: Bullet points. Header: '## Innovation & Adaptation'.\n\nDATA:\n" + intelligenceText);
             

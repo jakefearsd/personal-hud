@@ -1,8 +1,8 @@
 package com.hud.analytics;
 
+import com.hud.briefing.DynamicLlmService;
 import com.hud.news.NewsArticle;
 import com.hud.news.PlaywrightScraperService;
-import dev.langchain4j.model.chat.ChatLanguageModel;
 import net.dankito.readability4j.Article;
 import net.dankito.readability4j.Readability4J;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import java.util.List;
 class SummarizationPrototypeTest {
 
     @Autowired
-    private ChatLanguageModel gemmaModel;
+    private DynamicLlmService dynamicLlmService;
 
     @Autowired
     private PlaywrightScraperService scraperService;
@@ -26,6 +26,10 @@ class SummarizationPrototypeTest {
     @Test
     void prototypeLargeScaleSummarization() throws Exception {
         System.out.println("=== STARTING SUMMARIZATION PROTOTYPE ===");
+        
+        var models = dynamicLlmService.getActiveModels();
+        if (models.isEmpty()) return;
+        var gemmaModel = models.get(0).model();
         
         // 1. Get articles from the scraper
         List<NewsArticle> articles = scraperService.scrapeYahooFinance();

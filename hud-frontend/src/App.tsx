@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { BriefingView } from './components/BriefingView'
 import { ObservabilityView } from './components/ObservabilityView'
-import type { DailyBriefing } from './components/types'
+import { ConfigView } from './components/ConfigView'
+import type { DailyBriefing, LlmConfig } from './components/types'
 import './App.css'
 
 interface NewsArticle {
@@ -17,17 +18,33 @@ function App() {
   const [activeNewsTab, setActiveNewsTab] = useState<NewsTab>('briefing')
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [briefings, setBriefings] = useState<DailyBriefing[]>([])
+  const [configs, setConfigs] = useState<LlmConfig[]>([])
+  const [selectedModel, setSelectedModel] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    fetchConfigs()
+  }, [])
+
+  useEffect(() => {
     if (activeMainTab === 'news' || activeMainTab === 'theaters') {
-      fetchLatestBriefings()
+      fetchLatestBriefings(selectedModel)
       if (activeMainTab === 'news' && activeNewsTab === 'live') {
         fetchLiveNews()
       }
     }
-  }, [activeMainTab, activeNewsTab])
+  }, [activeMainTab, activeNewsTab, selectedModel])
+
+  const fetchConfigs = () => {
+    fetch('/api/config/brains')
+      .then(res => res.json())
+      .then(data => {
+        setConfigs(data)
+        const active = data.find((c: any) => c.active)
+        if (active) setSelectedModel(active.name)
+      })
+  }
 
   const fetchLiveNews = () => {
     setLoading(true)
@@ -43,9 +60,10 @@ function App() {
       })
   }
 
-  const fetchLatestBriefings = () => {
+  const fetchLatestBriefings = (model?: string) => {
     setLoading(true)
-    fetch('/api/briefings/latest')
+    const url = model ? `/api/briefings/latest?modelName=${encodeURIComponent(model)}` : '/api/briefings/latest'
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         setBriefings(data)
@@ -61,7 +79,7 @@ function App() {
     setLoading(true)
     fetch('/api/briefings/trigger', { method: 'POST' })
       .then(() => {
-        alert('Briefing generation started. This will take a few minutes. Check back soon.')
+        alert('Briefing generation started for all active models.')
         setLoading(false)
       })
   }
@@ -72,55 +90,30 @@ function App() {
         <div className="header-left">
           <h1>HUD</h1>
           <nav className="main-tabs">
-            <button 
-              className={activeMainTab === 'news' ? 'active' : ''} 
-              onClick={() => setActiveMainTab('news')}
-            >
-              News
-            </button>
-            <button 
-              className={activeMainTab === 'theaters' ? 'active' : ''} 
-              onClick={() => setActiveMainTab('theaters')}
-            >
-              Theaters
-            </button>
-            <button 
-              className={activeMainTab === 'investments' ? 'active' : ''} 
-              onClick={() => setActiveMainTab('investments')}
-            >
-              Investments
-            </button>
-            <button 
-              className={activeMainTab === 'config' ? 'active' : ''} 
-              onClick={() => setActiveMainTab('config')}
-            >
-              Config
-            </button>
-            <button 
-              className={activeMainTab === 'observability' ? 'active' : ''} 
-              onClick={() => setActiveMainTab('observability')}
-            >
-              Observability
-            </button>
+            <button className={activeMainTab === 'news' ? 'active' : ''} onClick={() => setActiveMainTab('news')}>News</button>
+            <button className={activeMainTab === 'theaters' ? 'active' : ''} onClick={() => setActiveMainTab('theaters')}>Theaters</button>
+            <button className={activeMainTab === 'investments' ? 'active' : ''} onClick={() => setActiveMainTab('investments')}>Investments</button>
+            <button className={activeMainTab === 'config' ? 'active' : ''} onClick={() => setActiveMainTab('config')}>Config</button>
+            <button className={activeMainTab === 'observability' ? 'active' : ''} onClick={() => setActiveMainTab('observability')}>Observability</button>
           </nav>
         </div>
         
-        {activeMainTab === 'news' && (
-          <nav className="sub-tabs">
-            <button 
-              className={activeNewsTab === 'briefing' ? 'active' : ''} 
-              onClick={() => setActiveNewsTab('briefing')}
-            >
-              Strategic Briefing
-            </button>
-            <button 
-              className={activeNewsTab === 'live' ? 'active' : ''} 
-              onClick={() => setActiveNewsTab('live')}
-            >
-              Live Feed
-            </button>
-          </nav>
-        )}
+        <div className="header-right">
+          {(activeMainTab === 'news' || activeMainTab === 'theaters') && (
+            <div className="model-switcher">
+              <label>Brain:</label>
+              <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
+                {configs.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
+          {activeMainTab === 'news' && (
+            <nav className="sub-tabs">
+              <button className={activeNewsTab === 'briefing' ? 'active' : ''} onClick={() => setActiveNewsTab('briefing')}>Briefing</button>
+              <button className={activeNewsTab === 'live' ? 'active' : ''} onClick={() => setActiveNewsTab('live')}>Live</button>
+            </nav>
+          )}
+        </div>
       </header>
 
       <main className="app-content">
@@ -128,7 +121,7 @@ function App() {
         
         {activeMainTab === 'news' && (
           <>
-            {loading && <div className="loader">Processing analytics...</div>}
+            {loading && <div className="loader">Fusing intelligence...</div>}
             {activeNewsTab === 'briefing' ? (
               <BriefingView 
                 briefings={briefings.filter(b => !['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
@@ -137,13 +130,11 @@ function App() {
               />
             ) : (
               <div className="live-feed">
-                <h2>Latest Financial Headlines</h2>
+                <h2>Latest Headlines</h2>
                 <ul className="news-list">
                   {articles.map((article, index) => (
                     <li key={index} className="news-item">
-                      <a href={article.url} target="_blank" rel="noopener noreferrer">
-                        {article.title}
-                      </a>
+                      <a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
                     </li>
                   ))}
                 </ul>
@@ -163,20 +154,13 @@ function App() {
         {activeMainTab === 'investments' && (
           <div className="placeholder-view">
             <h2>Investment Portfolio</h2>
-            <p>Investment data and analysis module coming soon.</p>
+            <p>Module coming soon.</p>
           </div>
         )}
 
-        {activeMainTab === 'config' && (
-          <div className="placeholder-view">
-            <h2>System Configuration</h2>
-            <p>Administrative and scraping configuration module coming soon.</p>
-          </div>
-        )}
+        {activeMainTab === 'config' && <ConfigView />}
 
-        {activeMainTab === 'observability' && (
-          <ObservabilityView />
-        )}
+        {activeMainTab === 'observability' && <ObservabilityView />}
       </main>
     </div>
   )

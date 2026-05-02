@@ -14,6 +14,8 @@ public class PipelineRun {
     @Enumerated(EnumType.STRING)
     private BriefingCategory category;
 
+    private String modelName;
+
     @Enumerated(EnumType.STRING)
     private PipelineStatus status;
 
@@ -25,8 +27,9 @@ public class PipelineRun {
 
     public PipelineRun() {}
 
-    public PipelineRun(BriefingCategory category, PipelineStatus status, LocalDateTime startTime) {
+    public PipelineRun(BriefingCategory category, String modelName, PipelineStatus status, LocalDateTime startTime) {
         this.category = category;
+        this.modelName = modelName;
         this.status = status;
         this.startTime = startTime;
     }
@@ -36,6 +39,8 @@ public class PipelineRun {
     public void setId(Long id) { this.id = id; }
     public BriefingCategory getCategory() { return category; }
     public void setCategory(BriefingCategory category) { this.category = category; }
+    public String getModelName() { return modelName; }
+    public void setModelName(String modelName) { this.modelName = modelName; }
     public PipelineStatus getStatus() { return status; }
     public void setStatus(PipelineStatus status) { this.status = status; }
     public LocalDateTime getStartTime() { return startTime; }

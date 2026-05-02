@@ -15,6 +15,19 @@ export interface DailyBriefing {
 }
 
 export type PipelineStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
+export type LlmProvider = 'OLLAMA' | 'GEMINI';
+
+export interface LlmConfig {
+  id?: number;
+  name: string;
+  provider: LlmProvider;
+  baseUrl: string;
+  modelName: string;
+  apiKey: string;
+  numCtx: number;
+  active: boolean;
+  updatedAt?: string;
+}
 
 export interface PipelineRun {
   id: number;
