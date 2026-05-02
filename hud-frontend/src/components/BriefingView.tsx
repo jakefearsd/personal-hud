@@ -1,0 +1,54 @@
+import ReactMarkdown from 'react-markdown';
+import type { BriefingCategory } from './types';
+
+interface DailyBriefing {
+  id: number;
+  briefingDate: string;
+  category: BriefingCategory;
+  markdownContent: string;
+}
+
+interface Props {
+  briefings: DailyBriefing[];
+  loading: boolean;
+  onTrigger: () => void;
+}
+
+const categoryTitles: Record<BriefingCategory, string> = {
+  'WORLD_NEWS': 'World News',
+  'WORLD_CONFLICTS': 'World Conflicts (ISW Analysis)',
+  'US_NEWS': 'US News',
+  'FINANCE': 'Financial Briefing',
+  'TECHNOLOGY': 'Technology & AI'
+};
+
+export const BriefingView = ({ briefings, loading, onTrigger }: Props) => {
+  return (
+    <div className="briefing-view">
+      <div className="view-header">
+        <h2>Strategic Daily Briefing</h2>
+        <button className="trigger-btn" onClick={onTrigger} disabled={loading}>
+          {loading ? 'Generating...' : 'Refresh Briefing'}
+        </button>
+      </div>
+
+      {briefings.length === 0 && !loading && (
+        <div className="empty-state">
+          <p>No briefings generated for today yet.</p>
+          <button onClick={onTrigger}>Generate Now</button>
+        </div>
+      )}
+
+      <div className="briefing-grid">
+        {briefings.map((b) => (
+          <div key={b.id} className="briefing-card">
+            <h3>{categoryTitles[b.category]}</h3>
+            <div className="markdown-body">
+              <ReactMarkdown>{b.markdownContent}</ReactMarkdown>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

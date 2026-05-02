@@ -1,0 +1,23 @@
+server:
+  port: 8888
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/hud}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+langchain4j:
+  ollama:
+    chat-model:
+      base-url: http://inference.jakefear.com:11434
+      model-name: gemma4:e4b
+      num-ctx: 32768
+      timeout: PT10M
+      temperature: 0.0
