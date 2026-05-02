@@ -14,20 +14,26 @@ interface DailyBriefing {
   markdownContent: string;
 }
 
+type MainTab = 'news' | 'investments' | 'config';
+type NewsTab = 'briefing' | 'live';
+
 function App() {
-  const [activeTab, setActiveTab] = useState<'live' | 'briefing'>('briefing')
+  const [activeMainTab, setActiveMainTab] = useState<MainTab>('news')
+  const [activeNewsTab, setActiveNewsTab] = useState<NewsTab>('briefing')
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [briefings, setBriefings] = useState<DailyBriefing[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (activeTab === 'live') {
-      fetchLiveNews()
-    } else {
-      fetchLatestBriefings()
+    if (activeMainTab === 'news') {
+      if (activeNewsTab === 'live') {
+        fetchLiveNews()
+      } else {
+        fetchLatestBriefings()
+      }
     }
-  }, [activeTab])
+  }, [activeMainTab, activeNewsTab])
 
   const fetchLiveNews = () => {
     setLoading(true)
@@ -69,42 +75,84 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>HUD (Heads-Up Display)</h1>
-        <nav className="tabs">
-          <button 
-            className={activeTab === 'briefing' ? 'active' : ''} 
-            onClick={() => setActiveTab('briefing')}
-          >
-            Strategic Briefing
-          </button>
-          <button 
-            className={activeTab === 'live' ? 'active' : ''} 
-            onClick={() => setActiveTab('live')}
-          >
-            Live Feed
-          </button>
-        </nav>
+        <div className="header-left">
+          <h1>HUD</h1>
+          <nav className="main-tabs">
+            <button 
+              className={activeMainTab === 'news' ? 'active' : ''} 
+              onClick={() => setActiveMainTab('news')}
+            >
+              News
+            </button>
+            <button 
+              className={activeMainTab === 'investments' ? 'active' : ''} 
+              onClick={() => setActiveMainTab('investments')}
+            >
+              Investments
+            </button>
+            <button 
+              className={activeMainTab === 'config' ? 'active' : ''} 
+              onClick={() => setActiveMainTab('config')}
+            >
+              Config
+            </button>
+          </nav>
+        </div>
+        
+        {activeMainTab === 'news' && (
+          <nav className="sub-tabs">
+            <button 
+              className={activeNewsTab === 'briefing' ? 'active' : ''} 
+              onClick={() => setActiveNewsTab('briefing')}
+            >
+              Strategic Briefing
+            </button>
+            <button 
+              className={activeNewsTab === 'live' ? 'active' : ''} 
+              onClick={() => setActiveNewsTab('live')}
+            >
+              Live Feed
+            </button>
+          </nav>
+        )}
       </header>
 
       <main className="app-content">
         {error && <div className="error-banner">Error: {error}</div>}
         
-        {loading && <div className="loader">Processing analytics...</div>}
+        {activeMainTab === 'news' && (
+          <>
+            {loading && <div className="loader">Processing analytics...</div>}
+            {activeNewsTab === 'briefing' ? (
+              <BriefingView briefings={briefings} loading={loading} onTrigger={triggerBriefing} />
+            ) : (
+              <div className="live-feed">
+                <h2>Latest Financial Headlines</h2>
+                <ul className="news-list">
+                  {articles.map((article, index) => (
+                    <li key={index} className="news-item">
+                      <a href={article.url} target="_blank" rel="noopener noreferrer">
+                        {article.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
 
-        {activeTab === 'briefing' ? (
-          <BriefingView briefings={briefings} loading={loading} onTrigger={triggerBriefing} />
-        ) : (
-          <div className="live-feed">
-            <h2>Latest Financial Headlines</h2>
-            <ul className="news-list">
-              {articles.map((article, index) => (
-                <li key={index} className="news-item">
-                  <a href={article.url} target="_blank" rel="noopener noreferrer">
-                    {article.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
+        {activeMainTab === 'investments' && (
+          <div className="placeholder-view">
+            <h2>Investment Portfolio</h2>
+            <p>Investment data and analysis module coming soon.</p>
+          </div>
+        )}
+
+        {activeMainTab === 'config' && (
+          <div className="placeholder-view">
+            <h2>System Configuration</h2>
+            <p>Administrative and scraping configuration module coming soon.</p>
           </div>
         )}
       </main>
