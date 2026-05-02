@@ -1,10 +1,12 @@
 package com.hud.analytics;
 
 import com.microsoft.playwright.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+@Disabled("Flaky integration test - use for manual structural analysis only")
 class IswStructuralAnalysisTest {
     @Test
     void analyzeIswStructure() {

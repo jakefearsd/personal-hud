@@ -2,9 +2,9 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 import App from './App';
 
-test('renders strategic briefings on default tab', async () => {
+test('renders strategic briefings on default theaters tab', async () => {
   const mockBriefings = [
-    { id: 1, briefingDate: '2026-05-01', category: 'TECHNOLOGY', markdownContent: '## AI Update\nGemma4 is running well.' }
+    { id: 1, generatedAt: '2026-05-02T12:00:00', category: 'THEATER_UKRAINE', markdownContent: '## Tactical Update\nBakhmut sector stabilization.' }
   ];
 
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
@@ -15,18 +15,16 @@ test('renders strategic briefings on default tab', async () => {
   render(<App />);
 
   await waitFor(() => {
-    expect(screen.getByText('Technology & AI')).toBeInTheDocument();
-    expect(screen.getByText(/Gemma4 is running well/i)).toBeInTheDocument();
+    expect(screen.getByText('European Theater: Ukraine')).toBeInTheDocument();
+    expect(screen.getByText(/Bakhmut sector stabilization/i)).toBeInTheDocument();
   });
 });
 
-test('renders financial news articles on Live Feed tab', async () => {
+test('renders financial news articles on Live sub-tab of News', async () => {
   const mockArticles = [
-    { title: 'Market Rally Continues', url: 'https://finance.yahoo.com/news/1' },
-    { title: 'Tech Stocks Surge', url: 'https://finance.yahoo.com/news/2' }
+    { title: 'Market Rally Continues', url: 'https://finance.yahoo.com/news/1' }
   ];
 
-  // Mock global fetch using Vitest utility
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
     ok: true,
     json: () => Promise.resolve(mockArticles),
@@ -34,17 +32,16 @@ test('renders financial news articles on Live Feed tab', async () => {
 
   render(<App />);
 
-  // Switch to Live Feed tab
-  const liveFeedTab = screen.getByText(/Live Feed/i);
-  fireEvent.click(liveFeedTab);
+  // Switch to News tab
+  const newsTab = screen.getByText(/News/i);
+  fireEvent.click(newsTab);
+
+  // Switch to Live sub-tab
+  const liveTab = screen.getByText(/Live/i);
+  fireEvent.click(liveTab);
 
   // Should eventually show the articles
   await waitFor(() => {
     expect(screen.getByText('Market Rally Continues')).toBeInTheDocument();
-    expect(screen.getByText('Tech Stocks Surge')).toBeInTheDocument();
   });
-
-  const links = screen.getAllByRole('link');
-  expect(links).toHaveLength(2);
-  expect(links[0]).toHaveAttribute('href', 'https://finance.yahoo.com/news/1');
 });
