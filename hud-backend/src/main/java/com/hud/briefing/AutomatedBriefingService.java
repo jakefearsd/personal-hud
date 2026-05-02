@@ -4,7 +4,6 @@ import com.hud.news.PlaywrightScraperService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
@@ -39,13 +38,10 @@ public class AutomatedBriefingService {
     public void generateDailyBriefing() {
         LocalDate today = LocalDate.now();
         
-        // News Domain
         try { generateForCategory(today, BriefingCategory.WORLD_NEWS, "https://feeds.bbci.co.uk/news/world/rss.xml"); } catch (Exception e) { e.printStackTrace(); }
         try { generateForCategory(today, BriefingCategory.US_NEWS, "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml"); } catch (Exception e) { e.printStackTrace(); }
         try { generateForCategory(today, BriefingCategory.FINANCE, "https://feeds.bbci.co.uk/news/business/rss.xml"); } catch (Exception e) { e.printStackTrace(); }
         try { generateForCategory(today, BriefingCategory.TECHNOLOGY, "hn"); } catch (Exception e) { e.printStackTrace(); }
-        
-        // Intelligence Domain (Theaters)
         try { generateForCategory(today, BriefingCategory.THEATER_UKRAINE, "ukraine"); } catch (Exception e) { e.printStackTrace(); }
         try { generateForCategory(today, BriefingCategory.THEATER_MIDDLE_EAST, "mideast"); } catch (Exception e) { e.printStackTrace(); }
         try { generateForCategory(today, BriefingCategory.GLOBAL_SITREP, "all"); } catch (Exception e) { e.printStackTrace(); }
@@ -56,13 +52,21 @@ public class AutomatedBriefingService {
         final PipelineRun savedRun = transactionTemplate.execute(status -> pipelineRunRepository.save(run));
 
         try {
+            String content;
             if (isTheaterCategory(category)) {
-                generateDeepDiveIntelligence(date, category, query);
+                content = generateDeepDiveContent(category, query);
             } else {
-                generateStandardBriefing(date, category, query);
+                content = generateStandardContent(category, query);
             }
             
+            final String finalContent = content;
             transactionTemplate.execute(status -> {
+                // 1. Save Briefing
+                repository.deleteByCategoryAndGeneratedAtAfter(category, LocalDate.now().atStartOfDay());
+                DailyBriefing briefing = new DailyBriefing(LocalDateTime.now(), category, finalContent);
+                repository.save(briefing);
+
+                // 2. Update Run Status
                 PipelineRun current = pipelineRunRepository.findById(savedRun.getId()).orElseThrow();
                 current.setStatus(PipelineStatus.SUCCESS);
                 current.setEndTime(LocalDateTime.now());
@@ -82,10 +86,8 @@ public class AutomatedBriefingService {
         }
     }
 
-    private void generateStandardBriefing(LocalDate date, BriefingCategory category, String query) {
+    private String generateStandardContent(BriefingCategory category, String query) {
         BriefingPersona persona = BriefingPersona.of(category);
-        System.out.println("Generating [" + persona.name() + "] briefing for: " + category);
-        
         BriefingSourceStrategy strategy = sourceFactory.getStrategy(category);
         List<String> links = strategy.getLinks(query, 3);
         
@@ -101,16 +103,11 @@ public class AutomatedBriefingService {
             throw new RuntimeException("Insufficient signal for " + category);
         }
 
-        String prompt = buildStandardPrompt(persona, category, combinedText.toString());
-        String markdown = chatModel.generate(prompt);
-        
-        saveBriefing(date, category, markdown);
+        return chatModel.generate(buildStandardPrompt(persona, category, combinedText.toString()));
     }
 
-    private void generateDeepDiveIntelligence(LocalDate date, BriefingCategory category, String query) {
+    private String generateDeepDiveContent(BriefingCategory category, String query) {
         BriefingPersona persona = BriefingPersona.of(category);
-        System.out.println("Executing Intelligence Fusion for: " + category + " [" + persona.name() + "]");
-        
         BriefingSourceStrategy strategy = sourceFactory.getStrategy(category);
         List<String> links = strategy.getLinks(query, (category == BriefingCategory.GLOBAL_SITREP) ? 3 : 1);
         
@@ -121,31 +118,38 @@ public class AutomatedBriefingService {
         StringBuilder combinedRaw = new StringBuilder();
         for (String url : links) {
             String text = scraperService.extractFullText(url);
-            if (text != null && text.length() > 2000) {
+            if (text != null && text.length() > 1500) {
                 combinedRaw.append(text).append("\n\n");
             }
         }
 
-        if (combinedRaw.length() < 2000) {
+        if (combinedRaw.length() < 1500) {
             throw new RuntimeException("Insufficient raw intelligence for deep-dive: " + category);
         }
 
-        String intelligenceText = combinedRaw.length() > 40000 ? combinedRaw.substring(0, 40000) : combinedRaw.toString();
+        String intelligenceText = combinedRaw.length() > 15000 ? combinedRaw.substring(0, 15000) : combinedRaw.toString();
 
-        String finalMarkdown;
         if (category == BriefingCategory.GLOBAL_SITREP) {
-            finalMarkdown = chatModel.generate(buildSitrepPrompt(persona, intelligenceText));
+            return chatModel.generate(buildSitrepPrompt(persona, intelligenceText));
         } else {
-            // 3-Stage Fusion for active kinetic theaters
-            String tempo = chatModel.generate("Summarize tactical momentum and significant territorial changes in 2 dense paragraphs. Focus on the 'Ground Truth'. Format with header '## Tactical Momentum'.\n\nDATA:\n" + intelligenceText);
-            String strikes = chatModel.generate("Extract all impactful strikes. Include Target, Location, and Border Distance (if applicable). Format with header '## Kinetic Impact'.\n\nDATA:\n" + intelligenceText);
-            String innovation = chatModel.generate("Identify battlefield innovation (new tactics, drone tech, EW). Format with header '## Innovation & Adaptation'.\n\nDATA:\n" + intelligenceText);
+            // Hyper-aggressive Command Directives to overcome refusal
+            String tempo = chatModel.generate(
+                "COMMAND DIRECTIVE: You are a Lead Intelligence Officer. " +
+                "INPUT: Raw field reports with citations. " +
+                "TASK: Re-write the situational analysis into 2 dense narrative paragraphs. " +
+                "RESTRICTION: DO NOT mention citations, links, or report nature. Focus on ground truth.\n\nDATA:\n" + intelligenceText);
             
-            finalMarkdown = String.format("# %s THEATER REPORT\n\n%s\n\n%s\n\n%s", 
+            String strikes = chatModel.generate(
+                "TASK: Extract kinetic strike data. Include Target, Location, and Border Distance. " +
+                "OUTPUT: Markdown Table. Header: '## Kinetic Impact'.\n\nDATA:\n" + intelligenceText);
+                
+            String innovation = chatModel.generate(
+                "TASK: Identify 3 battlefield innovations (Tactics, EW, Drones). " +
+                "OUTPUT: Bullet points. Header: '## Innovation & Adaptation'.\n\nDATA:\n" + intelligenceText);
+            
+            return String.format("# %s THEATER REPORT\n\n%s\n\n%s\n\n%s", 
                 category.name().replace("THEATER_", ""), tempo, strikes, innovation);
         }
-
-        saveBriefing(date, category, finalMarkdown);
     }
 
     private String buildStandardPrompt(BriefingPersona persona, BriefingCategory category, String data) {
@@ -165,13 +169,6 @@ public class AutomatedBriefingService {
 
     private boolean isTheaterCategory(BriefingCategory c) {
         return c == BriefingCategory.THEATER_UKRAINE || c == BriefingCategory.THEATER_MIDDLE_EAST || c == BriefingCategory.GLOBAL_SITREP;
-    }
-
-    @Transactional
-    public void saveBriefing(LocalDate date, BriefingCategory category, String content) {
-        repository.deleteByBriefingDateAndCategory(date, category);
-        DailyBriefing briefing = new DailyBriefing(date, category, content);
-        repository.save(briefing);
     }
 
     private boolean isValidSituationalContent(String text, String url) {

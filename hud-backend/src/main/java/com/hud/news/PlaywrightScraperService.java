@@ -20,9 +20,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Service for high-level scraping operations using Playwright and native HTTP.
- */
 @Service
 public class PlaywrightScraperService {
 
@@ -34,89 +31,58 @@ public class PlaywrightScraperService {
         return scrapeGeneral("https://finance.yahoo.com/news/", YAHOO_CONSENT_BTNS, YAHOO_SELECTOR, "https://finance.yahoo.com", 15);
     }
 
-    /**
-     * Fetch article links from an RSS feed using native HTTP to avoid bot-detection on discovery.
-     */
     public List<String> getLinksFromRss(String rssUrl, int limit) {
+        System.out.println("[RSS] Fetching links from: " + rssUrl);
         try {
-            HttpClient client = HttpClient.newBuilder()
-                    .followRedirects(HttpClient.Redirect.ALWAYS)
-                    .build();
-            
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(rssUrl))
-                    .header("User-Agent", USER_AGENT)
-                    .build();
-
+            HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(rssUrl)).header("User-Agent", USER_AGENT).build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             String body = response.body();
 
             List<String> links = new ArrayList<>();
-            // Extract links from <link> tags in RSS
             Pattern pattern = Pattern.compile("<link>(https?://[^<]+)</link>");
             Matcher matcher = pattern.matcher(body);
             while (matcher.find() && links.size() < limit) {
                 String link = matcher.group(1);
-                // Filter out feed links and XML files
                 if (!link.endsWith(".xml") && !link.contains("/rss") && !link.endsWith("/news") && !links.contains(link)) {
                     links.add(link);
                 }
             }
+            System.out.println("[RSS] Found " + links.size() + " links.");
             return links;
         } catch (Exception e) {
-            System.err.println("Failed to fetch RSS from " + rssUrl + ": " + e.getMessage());
+            System.err.println("[RSS] Failed: " + e.getMessage());
             return List.of();
         }
     }
 
     public List<String> getIswLinks(int limit) {
-        // Broaden the keywords to capture deep tactical reports
-        String iswSelector = "a[href*='offensive-campaign-assessment'], " +
-                             "a[href*='conflict-update'], " +
-                             "a[href*='ukraine-conflict-updates'], " +
-                             "a[href*='iran-update'], " +
-                             "a[href*='israel-hamas-war-update']";
-        
-        // Stage 1: Check homepage for latest featured reports
-        System.out.println("ISW Discovery Stage 1: Homepage");
-        List<String> links = scrapeLinks("https://www.understandingwar.org/", iswSelector, "https://www.understandingwar.org", 20);
-        
-        // Stage 2: Fallback to the main publications hub if homepage is thin
-        if (links.size() < 2) {
-            System.out.println("ISW Discovery Stage 2: Publications Hub");
-            List<String> hubLinks = scrapeLinks("https://www.understandingwar.org/publications", iswSelector, "https://www.understandingwar.org", 20);
-            links.addAll(hubLinks);
-        }
-
+        // Deep discovery via the publications page
+        String url = "https://www.understandingwar.org/publications";
+        String iswSelector = "a[href*='offensive-campaign-assessment'], a[href*='iran-update'], a[href*='israel-hamas-war-update'], a[href*='conflict-update']";
+        System.out.println("[ISW] Discovery started on: " + url);
+        List<String> links = scrapeLinks(url, iswSelector, "https://www.understandingwar.org", 25);
         return links.stream()
-                .filter(l -> !l.contains("/about"))
-                .filter(l -> !l.contains("/terms"))
-                .filter(l -> !l.contains("/privacy"))
-                .filter(l -> !l.contains("/analysis")) // Exclude archives
+                .filter(l -> !l.contains("/about") && !l.contains("/terms") && !l.contains("/privacy") && !l.endsWith("/publications"))
                 .distinct()
                 .limit(limit)
                 .collect(Collectors.toList());
     }
 
     public String extractFullText(String url) {
-        // Clean the URL (RSS links often have &amp;)
         String targetUrl = url.replace("&amp;", "&");
+        System.out.println("[EXTRACT] Starting extraction for: " + targetUrl);
         
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
             Browser.NewContextOptions contextOptions = new Browser.NewContextOptions().setUserAgent(USER_AGENT).setLocale("en-US");
             Page page = browser.newContext(contextOptions).newPage();
             
-            // Generous navigation timeout
-            page.navigate(targetUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE).setTimeout(60000));
-            
+            page.navigate(targetUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(45000));
             handleConsent(page);
 
-            // Follow redirects away from known walled domains
             if (page.url().contains("google.com/") || page.url().contains("yahoo.com/")) {
-                try {
-                    page.waitForURL(u -> !u.contains("google.com") && !u.contains("yahoo.com"), new Page.WaitForURLOptions().setTimeout(10000));
-                } catch (Exception e) {}
+                try { page.waitForURL(u -> !u.contains("google.com") && !u.contains("yahoo.com"), new Page.WaitForURLOptions().setTimeout(10000)); } catch (Exception e) {}
             }
 
             page.waitForTimeout(3000);
@@ -126,9 +92,23 @@ public class PlaywrightScraperService {
             Readability4J readability = new Readability4J(targetUrl, html);
             Article article = readability.parse();
             String content = article.getTextContent();
-            return (content != null) ? content.trim() : "";
+            
+            if (content == null || content.trim().length() < 100) return "";
+
+            // Surgical Truncation for Narrative Resolution
+            String cleaned = content.trim();
+            String[] markers = {"Endnotes", "Citations", "Technical Notes", "Authors:", "Related Publications", "Click here to see ISW"};
+            for (String marker : markers) {
+                int idx = cleaned.indexOf(marker);
+                if (idx > 1000) {
+                    cleaned = cleaned.substring(0, idx);
+                }
+            }
+            
+            // Return high-signal block
+            return cleaned.length() > 20000 ? cleaned.substring(0, 20000) : cleaned.trim();
         } catch (Exception e) {
-            System.err.println("Failed to extract text from " + url + ": " + e.getMessage());
+            System.err.println("[EXTRACT] Failed: " + e.getMessage());
             return "";
         }
     }
@@ -136,62 +116,54 @@ public class PlaywrightScraperService {
     private List<String> scrapeLinks(String url, String selector, String baseUrl, int limit) {
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            Browser.NewContextOptions contextOptions = new Browser.NewContextOptions().setUserAgent(USER_AGENT).setLocale("en-US");
-            Page page = browser.newContext(contextOptions).newPage();
-            page.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
+            Page page = browser.newContext(new Browser.NewContextOptions().setUserAgent(USER_AGENT)).newPage();
+            page.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
             handleConsent(page);
             List<String> links = new ArrayList<>();
-            page.locator(selector).all().forEach(locator -> {
+            page.locator(selector).all().forEach(l -> {
                 try {
-                    String href = locator.getAttribute("href");
+                    String href = l.getAttribute("href");
                     if (href != null && !href.isBlank()) {
-                        String absUrl = href.startsWith("/") ? baseUrl + href : href;
-                        if (!links.contains(absUrl)) links.add(absUrl);
+                        String abs = href.startsWith("/") ? baseUrl + href : href;
+                        if (!links.contains(abs)) links.add(abs);
                     }
                 } catch (Exception e) {}
             });
             browser.close();
-            return links;
-        } catch (Exception e) {
-            return List.of();
-        }
+            return links.stream().limit(limit).collect(Collectors.toList());
+        } catch (Exception e) { return List.of(); }
     }
 
     private List<NewsArticle> scrapeGeneral(String url, String[] consentBtns, String selector, String baseUrl, int limit) {
         try (Playwright playwright = Playwright.create()) {
             Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            Browser.NewContextOptions contextOptions = new Browser.NewContextOptions().setUserAgent(USER_AGENT).setLocale("en-US");
-            Page page = browser.newContext(contextOptions).newPage();
-            page.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
+            Page page = browser.newContext(new Browser.NewContextOptions().setUserAgent(USER_AGENT)).newPage();
+            page.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
             handleConsent(page);
-            page.waitForTimeout(3000);
+            page.waitForTimeout(2000);
             List<NewsArticle> articles = new ArrayList<>();
-            page.locator(selector).all().forEach(locator -> {
+            page.locator(selector).all().forEach(l -> {
                 try {
-                    String title = locator.innerText();
-                    String href = locator.getAttribute("href");
-                    if (title != null && title.trim().length() > 10 && href != null && !href.isBlank()) {
-                        String absUrl = href.startsWith("/") ? baseUrl + href : href;
-                        articles.add(new NewsArticle(title.trim().replaceAll("\\s+", " "), absUrl));
+                    String title = l.innerText();
+                    String href = l.getAttribute("href");
+                    if (title != null && title.length() > 10 && href != null) {
+                        articles.add(new NewsArticle(title.trim(), href.startsWith("/") ? baseUrl + href : href));
                     }
                 } catch (Exception e) {}
             });
             browser.close();
             return articles.stream().limit(limit).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
+        } catch (Exception e) { return List.of(); }
     }
 
     private void handleConsent(Page page) {
         try {
-            String[] selectors = {"button:has-text('Accept all')", "button:has-text('Alle akzeptieren')", "button:has-text('I agree')", "button:has-text('Agree')", "button[name='agree']", "button[value='agree']"};
-            for (String s : selectors) {
+            String[] sels = {"button:has-text('Accept all')", "button:has-text('Agree')", "button[name='agree']"};
+            for (String s : sels) {
                 var btn = page.locator(s).first();
                 if (btn.isVisible()) {
                     btn.click();
-                    page.waitForLoadState(LoadState.NETWORKIDLE);
-                    page.waitForTimeout(1000);
+                    page.waitForLoadState(LoadState.DOMCONTENTLOADED);
                     break;
                 }
             }

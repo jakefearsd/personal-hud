@@ -11,7 +11,8 @@ public class DailyBriefing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate briefingDate;
+    @Column(name = "generated_at")
+    private java.time.LocalDateTime generatedAt;
 
     @Enumerated(EnumType.STRING)
     private BriefingCategory category;
@@ -21,8 +22,8 @@ public class DailyBriefing {
 
     public DailyBriefing() {}
 
-    public DailyBriefing(LocalDate briefingDate, BriefingCategory category, String markdownContent) {
-        this.briefingDate = briefingDate;
+    public DailyBriefing(java.time.LocalDateTime generatedAt, BriefingCategory category, String markdownContent) {
+        this.generatedAt = generatedAt;
         this.category = category;
         this.markdownContent = markdownContent;
     }
@@ -30,8 +31,8 @@ public class DailyBriefing {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public LocalDate getBriefingDate() { return briefingDate; }
-    public void setBriefingDate(LocalDate briefingDate) { this.briefingDate = briefingDate; }
+    public java.time.LocalDateTime getGeneratedAt() { return generatedAt; }
+    public void setGeneratedAt(java.time.LocalDateTime generatedAt) { this.generatedAt = generatedAt; }
     public BriefingCategory getCategory() { return category; }
     public void setCategory(BriefingCategory category) { this.category = category; }
     public String getMarkdownContent() { return markdownContent; }

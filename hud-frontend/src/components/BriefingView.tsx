@@ -1,12 +1,5 @@
 import ReactMarkdown from 'react-markdown';
-import type { BriefingCategory } from './types';
-
-interface DailyBriefing {
-  id: number;
-  briefingDate: string;
-  category: BriefingCategory;
-  markdownContent: string;
-}
+import type { DailyBriefing, BriefingCategory } from './types';
 
 interface Props {
   briefings: DailyBriefing[];

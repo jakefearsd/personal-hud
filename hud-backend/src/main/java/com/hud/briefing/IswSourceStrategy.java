@@ -28,13 +28,21 @@ public class IswSourceStrategy implements BriefingSourceStrategy {
         
         List<String> filtered;
         if ("ukraine".equalsIgnoreCase(query)) {
+            // Assessment reports contain the narrative; 'updates' are often just link lists
             filtered = links.stream()
-                    .filter(l -> l.contains("offensive-campaign-assessment") || l.contains("ukraine"))
+                    .filter(l -> l.contains("offensive-campaign-assessment"))
                     .limit(limit)
                     .collect(Collectors.toList());
+            
+            if (filtered.isEmpty()) {
+                filtered = links.stream()
+                        .filter(l -> l.contains("ukraine"))
+                        .limit(limit)
+                        .collect(Collectors.toList());
+            }
         } else if ("mideast".equalsIgnoreCase(query)) {
             filtered = links.stream()
-                    .filter(l -> l.contains("iran-update") || l.contains("israel-hamas-war"))
+                    .filter(l -> l.contains("iran-update") || l.contains("israel-hamas-war") || l.contains("middle-east"))
                     .limit(limit)
                     .collect(Collectors.toList());
         } else {

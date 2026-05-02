@@ -23,14 +23,6 @@ export const ObservabilityView = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const formatDuration = (start: string, end: string | null) => {
-    if (!end) return 'Ongoing...';
-    const s = new Date(start).getTime();
-    const e = new Date(end).getTime();
-    const diff = Math.round((e - s) / 1000);
-    return `${diff}s`;
-  };
-
   return (
     <div className="observability-view">
       <div className="view-header">
@@ -65,9 +57,11 @@ export const ObservabilityView = () => {
                   </div>
                 </td>
                 <td className="col-time">
-                  <Clock size={12} /> {new Date(run.startTime).toLocaleTimeString()}
+                  <Clock size={12} /> {new Date(run.startTime).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </td>
-                <td className="col-duration">{formatDuration(run.startTime, run.endTime)}</td>
+                <td className="col-duration">
+                   {run.endTime ? `${((new Date(run.endTime).getTime() - new Date(run.startTime).getTime()) / 1000).toFixed(1)}s` : 'Ongoing...'}
+                </td>
                 <td className="col-error">
                   {run.errorMessage && <span className="error-text">{run.errorMessage}</span>}
                   {!run.errorMessage && run.status === 'SUCCESS' && <span className="success-text">Nominal completion</span>}

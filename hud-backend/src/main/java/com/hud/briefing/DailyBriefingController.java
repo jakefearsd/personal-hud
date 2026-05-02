@@ -19,7 +19,7 @@ public class DailyBriefingController {
 
     @GetMapping("/latest")
     public List<DailyBriefing> getLatestBriefings() {
-        return repository.findByBriefingDate(LocalDate.now());
+        return repository.findLatestToday();
     }
 
     @PostMapping("/trigger")

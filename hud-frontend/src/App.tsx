@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react'
 import { BriefingView } from './components/BriefingView'
 import { ObservabilityView } from './components/ObservabilityView'
+import type { DailyBriefing } from './components/types'
 import './App.css'
 
 interface NewsArticle {
   title: string;
   url: string;
-}
-
-interface DailyBriefing {
-  id: number;
-  briefingDate: string;
-  category: any;
-  markdownContent: string;
 }
 
 type MainTab = 'news' | 'theaters' | 'investments' | 'config' | 'observability';
