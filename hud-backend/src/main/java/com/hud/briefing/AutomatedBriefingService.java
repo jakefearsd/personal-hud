@@ -35,6 +35,23 @@ public class AutomatedBriefingService {
     }
 
     @Async
+    public void generateForModel(Long configId) {
+        LlmConfig config = llmService.getConfigRepository().findById(configId)
+                .orElseThrow(() -> new RuntimeException("Model config not found: " + configId));
+        
+        if (!config.isActive()) {
+            System.err.println("Refusing to run inactive model: " + config.getName());
+            return;
+        }
+
+        DynamicLlmService.NamedChatModel model = llmService.buildSpecificModel(config);
+        LocalDate today = LocalDate.now();
+        
+        System.out.println("Starting targeted briefing run for model: " + model.name());
+        executeFullPipeline(today, model);
+    }
+
+    @Async
     @Scheduled(cron = "0 0 6 * * *")
     public void generateDailyBriefing() {
         LocalDate today = LocalDate.now();
@@ -47,15 +64,18 @@ public class AutomatedBriefingService {
 
         for (DynamicLlmService.NamedChatModel model : activeModels) {
             System.out.println("Starting daily briefing run for model: " + model.name());
-            
-            // Execute all categories
-            for (BriefingCategory category : BriefingCategory.values()) {
-                String query = getQueryForCategory(category);
-                try { 
-                    generateForCategory(today, category, query, model); 
-                } catch (Exception e) { 
-                    System.err.println("Failed generation for " + category + " [" + model.name() + "]: " + e.getMessage());
-                }
+            executeFullPipeline(today, model);
+        }
+    }
+
+    private void executeFullPipeline(LocalDate today, DynamicLlmService.NamedChatModel model) {
+        // News Domain
+        for (BriefingCategory category : BriefingCategory.values()) {
+            String query = getQueryForCategory(category);
+            try { 
+                generateForCategory(today, category, query, model); 
+            } catch (Exception e) { 
+                System.err.println("Failed generation for " + category + " [" + model.name() + "]: " + e.getMessage());
             }
         }
     }

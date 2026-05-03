@@ -16,12 +16,13 @@ import static org.mockito.Mockito.*;
 class LlmConfigControllerTest {
 
     @Mock private LlmConfigRepository repository;
+    @Mock private AutomatedBriefingService briefingService;
     private LlmConfigController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new LlmConfigController(repository);
+        controller = new LlmConfigController(repository, briefingService);
     }
 
     @Test

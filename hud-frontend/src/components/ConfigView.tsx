@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { LlmConfig, LlmProvider } from './types';
-import { Save, Trash2, Power, BrainCircuit, Key } from 'lucide-react';
+import { Save, Trash2, Power, BrainCircuit, Key, Play } from 'lucide-react';
 
 export const ConfigView = () => {
   const [configs, setConfigs] = useState<LlmConfig[]>([]);
@@ -67,6 +67,11 @@ export const ConfigView = () => {
   const handleToggle = (id: number) => {
     fetch(`/api/config/brains/${id}/toggle`, { method: 'POST' })
       .then(() => fetchConfigs());
+  };
+
+  const handleRunModel = (id: number) => {
+    fetch(`/api/config/brains/${id}/run`, { method: 'POST' })
+      .then(() => alert('Model-specific run triggered. Check Observability tab for progress.'));
   };
 
   const handleDelete = (id: number) => {
@@ -178,6 +183,9 @@ export const ConfigView = () => {
                   </div>
                 </div>
                 <div className="brain-actions">
+                  <button onClick={() => handleRunModel(config.id!)} title="Run This Model Now" disabled={!config.active}>
+                    <Play size={18} color={config.active ? '#3fb950' : '#8b949e'} />
+                  </button>
                   <button onClick={() => handleToggle(config.id!)} title={config.active ? 'Disable' : 'Enable'}>
                     <Power size={18} color={config.active ? '#3fb950' : '#f85149'} />
                   </button>

@@ -19,15 +19,23 @@ public class DynamicLlmService {
         this.providers = providers;
     }
 
+    public LlmConfigRepository getConfigRepository() {
+        return repository;
+    }
+
     public record NamedChatModel(String name, ChatLanguageModel model) {}
 
     public List<NamedChatModel> getActiveModels() {
         return repository.findByActiveTrue().stream()
-                .map(config -> new NamedChatModel(
-                        config.getName(), 
-                        findProvider(config.getProvider()).buildModel(config))
-                )
+                .map(this::buildSpecificModel)
                 .collect(Collectors.toList());
+    }
+
+    public NamedChatModel buildSpecificModel(LlmConfig config) {
+        return new NamedChatModel(
+                config.getName(), 
+                findProvider(config.getProvider()).buildModel(config)
+        );
     }
 
     private ChatModelProvider findProvider(LlmProvider provider) {
