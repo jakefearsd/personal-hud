@@ -13,7 +13,7 @@ public class OllamaModelProvider implements ChatModelProvider {
                 .baseUrl(config.getBaseUrl())
                 .modelName(config.getModelName())
                 .temperature(0.0)
-                .numCtx(config.getNumCtx() != null ? config.getNumCtx() : 32768)
+                .numCtx(config.getNumCtx() != null ? config.getNumCtx() : 131072)
                 .timeout(Duration.ofMinutes(10))
                 .build();
     }

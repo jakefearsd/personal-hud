@@ -4,7 +4,7 @@ import type { DailyBriefing, BriefingCategory } from './types';
 interface Props {
   briefings: DailyBriefing[];
   loading: boolean;
-  onTrigger: () => void;
+  onTrigger?: () => void;
 }
 
 const categoryTitles: Record<BriefingCategory, string> = {
@@ -22,15 +22,17 @@ export const BriefingView = ({ briefings, loading, onTrigger }: Props) => {
     <div className="briefing-view">
       <div className="view-header">
         <h2>Strategic Daily Briefing</h2>
-        <button className="trigger-btn" onClick={onTrigger} disabled={loading}>
-          {loading ? 'Generating...' : 'Refresh Briefing'}
-        </button>
+        {onTrigger && (
+          <button className="trigger-btn" onClick={onTrigger} disabled={loading}>
+            {loading ? 'Generating...' : 'Refresh Briefing'}
+          </button>
+        )}
       </div>
 
       {briefings.length === 0 && !loading && (
         <div className="empty-state">
           <p>No briefings generated for today yet.</p>
-          <button onClick={onTrigger}>Generate Now</button>
+          {onTrigger && <button onClick={onTrigger}>Generate Now</button>}
         </div>
       )}
 

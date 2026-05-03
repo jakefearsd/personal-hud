@@ -1,6 +1,7 @@
 package com.hud.briefing;
 
 import com.hud.news.PlaywrightScraperService;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -33,6 +34,7 @@ public class AutomatedBriefingService {
         this.pipelineRunRepository = pipelineRunRepository;
     }
 
+    @Async
     @Scheduled(cron = "0 0 6 * * *")
     public void generateDailyBriefing() {
         LocalDate today = LocalDate.now();

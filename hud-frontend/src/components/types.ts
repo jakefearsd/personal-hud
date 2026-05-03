@@ -37,3 +37,28 @@ export interface PipelineRun {
   endTime: string | null;
   errorMessage: string | null;
 }
+
+export interface MacroMetric {
+  ticker: string;
+  label: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  updatedAt: string;
+}
+
+export interface MetricHistory {
+  id: number;
+  ticker: string;
+  price: number;
+  changePercent: number;
+  timestamp: string;
+}
+
+export interface MarketEvent {
+  id: number;
+  ticker: string;
+  timestamp: string;
+  title: string;
+  rationale: string;
+}

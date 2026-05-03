@@ -7,58 +7,63 @@ import java.util.List;
 
 /**
  * Base class for processing briefings using the GoF Template Method pattern.
+ * Coordinates the Acquisition and Synthesis phases of the intelligence lifecycle.
  */
 public abstract class BriefingProcessor {
 
     protected final PlaywrightScraperService scraperService;
     protected final ChatLanguageModel chatModel;
     protected final BriefingSourceStrategy sourceStrategy;
+    protected final IntelligenceSynthesizer synthesizer;
 
     protected BriefingProcessor(PlaywrightScraperService scraperService, 
                                 ChatLanguageModel chatModel, 
-                                BriefingSourceStrategy sourceStrategy) {
+                                BriefingSourceStrategy sourceStrategy,
+                                IntelligenceSynthesizer synthesizer) {
         this.scraperService = scraperService;
         this.chatModel = chatModel;
         this.sourceStrategy = sourceStrategy;
+        this.synthesizer = synthesizer;
     }
 
     /**
-     * The Template Method: Defines the analytical lifecycle.
+     * The Template Method: Orchestrates the transition from Raw Signal to Intelligence.
      */
     public final String process(String query) {
         List<String> links = sourceStrategy.getLinks(query, getLinkLimit());
         
         if (links.isEmpty()) {
-            throw new RuntimeException("No sources found for query: " + query);
+            throw new RuntimeException("No signal sources found for: " + query);
         }
 
-        String consolidatedText = acquireConsolidatedText(links);
+        String consolidatedSignal = acquireSignal(links);
         
-        if (consolidatedText.length() < getMinRequiredChars()) {
-            throw new RuntimeException("Insufficient situational data captured.");
+        if (consolidatedSignal.length() < getMinRequiredChars()) {
+            throw new RuntimeException("Insufficient situational signal captured.");
         }
 
-        return synthesize(consolidatedText);
+        return synthesize(consolidatedSignal);
     }
 
     protected abstract int getLinkLimit();
     protected abstract int getMinRequiredChars();
-    protected abstract String synthesize(String rawText);
+    protected abstract String synthesize(String rawSignal);
 
-    protected String acquireConsolidatedText(List<String> links) {
+    protected String acquireSignal(List<String> links) {
         StringBuilder sb = new StringBuilder();
         for (String url : links) {
             String text = scraperService.extractFullText(url);
-            if (isValid(text, url)) {
+            if (isPlausibleContent(text, url)) {
                 sb.append("\n--- START SOURCE ---\n").append(text).append("\n--- END SOURCE ---\n");
             }
         }
         return sb.toString();
     }
 
-    private boolean isValid(String text, String url) {
+    private boolean isPlausibleContent(String text, String url) {
         if (text == null || text.length() < 500) return false;
         String lower = text.toLowerCase();
+        // Filter out common cookie walls and non-narrative pages
         return !lower.contains("before you continue") && !lower.contains("accept all cookies") && !url.contains("/about");
     }
 }

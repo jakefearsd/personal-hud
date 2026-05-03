@@ -4,20 +4,19 @@ import com.hud.news.PlaywrightScraperService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
 /**
- * Handles high-resolution, multi-stage extraction for tactical conflict theaters.
+ * Handles high-resolution situational synthesis for tactical conflict theaters.
  */
 public class DeepDiveBriefingProcessor extends BriefingProcessor {
 
     private final BriefingCategory category;
-    private final BriefingPersona persona;
 
     public DeepDiveBriefingProcessor(PlaywrightScraperService scraperService, 
                                    ChatLanguageModel chatModel, 
                                    BriefingSourceStrategy sourceStrategy,
+                                   IntelligenceSynthesizer synthesizer,
                                    BriefingCategory category) {
-        super(scraperService, chatModel, sourceStrategy);
+        super(scraperService, chatModel, sourceStrategy, synthesizer);
         this.category = category;
-        this.persona = BriefingPersona.of(category);
     }
 
     @Override
@@ -29,36 +28,10 @@ public class DeepDiveBriefingProcessor extends BriefingProcessor {
     protected int getMinRequiredChars() { return 1500; }
 
     @Override
-    protected String synthesize(String rawText) {
-        // High-density narrative block
-        String intelligenceText = rawText.length() > 15000 ? rawText.substring(0, 15000) : rawText;
-
+    protected String synthesize(String rawSignal) {
         if (category == BriefingCategory.GLOBAL_SITREP) {
-            String prompt = String.format(
-                "COMMAND DIRECTIVE: You are a Global Theater Strategist. " +
-                "TASK: Re-write the following raw data into a cross-theater strategic summary. " +
-                "RESTRICTION: DO NOT describe the text or sources. Provide a 3-5 paragraph narrative report.\n\nDATA:\n%s\n\nGLOBAL SITREP:",
-                intelligenceText
-            );
-            return chatModel.generate(prompt);
+            return synthesizer.synthesizeGlobalSitrep(chatModel, rawSignal);
         }
-
-        // 3-Stage Command Fusion for active kinetic theaters
-        String tempo = chatModel.generate(
-            "COMMAND DIRECTIVE: You are a Tactical Ground Analyst. " +
-            "TASK: Re-write the situational momentum into 2 dense narrative paragraphs. " +
-            "IGNORE all citation brackets [1], [2] and links. " +
-            "OUTPUT: Narrative Ground Truth only.\n\nDATA:\n" + intelligenceText);
-        
-        String strikes = chatModel.generate(
-            "TASK: Extract kinetic strike data (Target, Location, Distance). " +
-            "OUTPUT: Markdown Table. Header: '## Kinetic Impact'.\n\nDATA:\n" + intelligenceText);
-            
-        String innovation = chatModel.generate(
-            "TASK: Identify 3 battlefield innovations (Tactics, EW, Drones). " +
-            "OUTPUT: Bullet points. Header: '## Innovation & Adaptation'.\n\nDATA:\n" + intelligenceText);
-        
-        return String.format("# %s THEATER REPORT\n\n## Tactical Momentum\n%s\n\n%s\n\n%s", 
-            category.name().replace("THEATER_", ""), tempo, strikes, innovation);
+        return synthesizer.fuseTheaterIntelligence(chatModel, category, rawSignal);
     }
 }

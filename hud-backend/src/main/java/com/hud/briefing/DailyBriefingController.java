@@ -18,7 +18,7 @@ public class DailyBriefingController {
     }
 
     @GetMapping("/latest")
-    public List<DailyBriefing> getLatestBriefings(@RequestParam(required = false) String modelName) {
+    public List<DailyBriefing> getLatestBriefings(@RequestParam(name = "modelName", required = false) String modelName) {
         if (modelName != null && !modelName.isBlank()) {
             return repository.findByModelToday(modelName);
         }
@@ -27,7 +27,7 @@ public class DailyBriefingController {
 
     @PostMapping("/trigger")
     public String triggerBriefing() {
-        new Thread(briefingService::generateDailyBriefing).start();
+        briefingService.generateDailyBriefing();
         return "Briefing generation triggered in background.";
     }
 }

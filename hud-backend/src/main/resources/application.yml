@@ -3,8 +3,8 @@ server:
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5433/hud}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASS:password}
+    username: ${DB_USER:huduser}
+    password: ${DB_PASS:hudpass}
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,6 +18,6 @@ langchain4j:
     chat-model:
       base-url: http://inference.jakefear.com:11434
       model-name: gemma4:e4b
-      num-ctx: 65536
+      num-ctx: 131072
       timeout: PT10M
       temperature: 0.0

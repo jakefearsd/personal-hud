@@ -133,7 +133,57 @@ public class PlaywrightScraperService {
                     cleaned = cleaned.substring(0, idx);
                 }
             }
-            return cleaned.length() > 20000 ? cleaned.substring(0, 20000) : cleaned.trim();
+            return cleaned.length() > 1000000 ? cleaned.substring(0, 1000000) : cleaned.trim();
+        });
+    }
+
+    public MacroMetric scrapeYahooMetric(String ticker, String label) {
+        String url = "https://finance.yahoo.com/quote/" + ticker;
+        
+        return executeInBrowser(page -> {
+            try {
+                page.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(30000));
+                handleConsent(page);
+                
+                // High-resolution stabilization wait
+                page.waitForTimeout(8000);
+                
+                // Strictly symbol-locked selectors to prevent sidebar leakage
+                Locator priceLocator = page.locator("fin-streamer[data-symbol='" + ticker + "'][data-field='regularMarketPrice']").first();
+                Locator changeLocator = page.locator("fin-streamer[data-symbol='" + ticker + "'][data-field='regularMarketChange']").first();
+                Locator pctLocator = page.locator("fin-streamer[data-symbol='" + ticker + "'][data-field='regularMarketChangePercent']").first();
+
+                if (priceLocator.count() == 0) {
+                    throw new RuntimeException("Ticker " + ticker + " not found on page.");
+                }
+
+                String priceStr = priceLocator.innerText().trim();
+                String changeStr = changeLocator.innerText().trim();
+                String pctStr = pctLocator.innerText().trim();
+                
+                double price = Double.parseDouble(priceStr.replace(",", ""));
+                double change = Double.parseDouble(changeStr.replace(",", ""));
+                double pct = Double.parseDouble(pctStr.replace("(", "").replace(")", "").replace("%", ""));
+                
+                return new MacroMetric(ticker, label, price, change, pct);
+            } catch (Exception e) {
+                System.err.println("[MARKET] Failed to scrape " + ticker + ": " + e.getMessage());
+                return null;
+            }
+        });
+    }
+
+    public Double scrapeFredYieldSpread() {
+        String url = "https://fred.stlouisfed.org/series/T10Y2Y";
+        return executeInBrowser(page -> {
+            try {
+                page.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+                String value = page.locator(".series-meta-observation-value").innerText();
+                return Double.parseDouble(value.trim());
+            } catch (Exception e) {
+                System.err.println("[FRED] Failed to scrape yield spread: " + e.getMessage());
+                return null;
+            }
         });
     }
 

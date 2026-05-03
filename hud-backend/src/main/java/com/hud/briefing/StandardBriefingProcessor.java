@@ -4,7 +4,7 @@ import com.hud.news.PlaywrightScraperService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
 /**
- * Handles standard multi-article summaries for news categories.
+ * Handles standard multi-article summaries for general news categories.
  */
 public class StandardBriefingProcessor extends BriefingProcessor {
 
@@ -13,8 +13,9 @@ public class StandardBriefingProcessor extends BriefingProcessor {
     public StandardBriefingProcessor(PlaywrightScraperService scraperService, 
                                    ChatLanguageModel chatModel, 
                                    BriefingSourceStrategy sourceStrategy,
+                                   IntelligenceSynthesizer synthesizer,
                                    BriefingPersona persona) {
-        super(scraperService, chatModel, sourceStrategy);
+        super(scraperService, chatModel, sourceStrategy, synthesizer);
         this.persona = persona;
     }
 
@@ -25,11 +26,7 @@ public class StandardBriefingProcessor extends BriefingProcessor {
     protected int getMinRequiredChars() { return 800; }
 
     @Override
-    protected String synthesize(String rawText) {
-        String prompt = String.format(
-            "You are the %s. %s\nSTRICT RULES: NO META-COMMENTARY. FOCUS on %s. Use Markdown. 2-5 dense paragraphs.\n\nINTELLIGENCE DATA:\n%s\n\nTACTICAL BRIEFING:",
-            persona.name(), persona.instruction(), persona.focus(), rawText
-        );
-        return chatModel.generate(prompt);
+    protected String synthesize(String rawSignal) {
+        return synthesizer.synthesizeStandard(chatModel, persona, rawSignal);
     }
 }

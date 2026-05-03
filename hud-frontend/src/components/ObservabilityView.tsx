@@ -11,10 +11,35 @@ export const ObservabilityView = () => {
     fetch('/api/pipelines')
       .then(res => res.json())
       .then(data => {
-        setRuns(data);
+        setRuns(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setRuns([]);
+        setLoading(false);
+      });
+  };
+
+  const formatTime = (isoString: string) => {
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return 'N/A';
+      return d.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch (e) {
+      return 'N/A';
+    }
+  };
+
+  const calculateDuration = (start: string, end: string | null) => {
+    if (!end) return 'Ongoing...';
+    try {
+      const s = new Date(start).getTime();
+      const e = new Date(end).getTime();
+      if (isNaN(s) || isNaN(e)) return 'N/A';
+      return `${((e - s) / 1000).toFixed(1)}s`;
+    } catch (err) {
+      return 'N/A';
+    }
   };
 
   useEffect(() => {
@@ -45,8 +70,8 @@ export const ObservabilityView = () => {
             </tr>
           </thead>
           <tbody>
-            {runs.map(run => (
-              <tr key={run.id} className={`status-${run.status.toLowerCase()}`}>
+            {Array.isArray(runs) && runs.map(run => (
+              <tr key={run.id} className={`status-${run.status?.toLowerCase() || 'unknown'}`}>
                 <td className="col-category">{run.category}</td>
                 <td className="col-status">
                   <div className="status-badge">
@@ -57,10 +82,10 @@ export const ObservabilityView = () => {
                   </div>
                 </td>
                 <td className="col-time">
-                  <Clock size={12} /> {new Date(run.startTime).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  <Clock size={12} /> {formatTime(run.startTime)}
                 </td>
                 <td className="col-duration">
-                   {run.endTime ? `${((new Date(run.endTime).getTime() - new Date(run.startTime).getTime()) / 1000).toFixed(1)}s` : 'Ongoing...'}
+                   {calculateDuration(run.startTime, run.endTime)}
                 </td>
                 <td className="col-error">
                   {run.errorMessage && <span className="error-text">{run.errorMessage}</span>}

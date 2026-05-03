@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { BriefingView } from './components/BriefingView'
 import { ObservabilityView } from './components/ObservabilityView'
 import { ConfigView } from './components/ConfigView'
+import { InvestmentsView } from './components/InvestmentsView'
+import { LoginView } from './components/LoginView'
 import type { DailyBriefing, LlmConfig } from './components/types'
+import { User, LogOut } from 'lucide-react'
 import './App.css'
 
 interface NewsArticle {
@@ -20,12 +23,72 @@ function App() {
   const [briefings, setBriefings] = useState<DailyBriefing[]>([])
   const [configs, setConfigs] = useState<LlmConfig[]>([])
   const [selectedModel, setSelectedModel] = useState<string>('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [username, setUsername] = useState('')
+  const [showLogin, setShowLogin] = useState(false)
+
+  const fetchAuthStatus = useCallback(() => {
+    fetch('/api/auth/status')
+      .then(res => res.json())
+      .then(data => {
+        setIsAuthenticated(data.authenticated)
+        setIsAdmin(data.isAdmin)
+        setUsername(data.username || '')
+      })
+      .catch(err => console.error("Auth check failed", err))
+  }, [])
+
+  const fetchConfigs = useCallback(() => {
+    fetch('/api/config/brains')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setConfigs(data)
+          const active = data.find((c: any) => c.active)
+          if (active && !selectedModel) setSelectedModel(active.name)
+        }
+      })
+      .catch(err => console.error("Failed to fetch configs", err))
+  }, [selectedModel])
+
+  const fetchLiveNews = useCallback(() => {
+    setLoading(true)
+    fetch('/api/news')
+      .then(res => res.json())
+      .then(data => {
+        setArticles(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch(err => {
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
+
+  const fetchLatestBriefings = useCallback((model?: string) => {
+    setLoading(true)
+    const url = model ? `/api/briefings/latest?modelName=${encodeURIComponent(model)}` : '/api/briefings/latest'
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setBriefings(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch(err => {
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
 
   useEffect(() => {
+    fetchAuthStatus()
     fetchConfigs()
-  }, [])
+  }, [fetchAuthStatus, fetchConfigs])
 
   useEffect(() => {
     if (activeMainTab === 'news' || activeMainTab === 'theaters') {
@@ -34,53 +97,35 @@ function App() {
         fetchLiveNews()
       }
     }
-  }, [activeMainTab, activeNewsTab, selectedModel])
-
-  const fetchConfigs = () => {
-    fetch('/api/config/brains')
-      .then(res => res.json())
-      .then(data => {
-        setConfigs(data)
-        const active = data.find((c: any) => c.active)
-        if (active) setSelectedModel(active.name)
-      })
-  }
-
-  const fetchLiveNews = () => {
-    setLoading(true)
-    fetch('/api/news')
-      .then(res => res.json())
-      .then(data => {
-        setArticles(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        setError(err.message)
-        setLoading(false)
-      })
-  }
-
-  const fetchLatestBriefings = (model?: string) => {
-    setLoading(true)
-    const url = model ? `/api/briefings/latest?modelName=${encodeURIComponent(model)}` : '/api/briefings/latest'
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        setBriefings(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        setError(err.message)
-        setLoading(false)
-      })
-  }
+  }, [activeMainTab, activeNewsTab, selectedModel, fetchLatestBriefings, fetchLiveNews])
 
   const triggerBriefing = () => {
+    if (!isAdmin) return;
     setLoading(true)
     fetch('/api/briefings/trigger', { method: 'POST' })
-      .then(() => {
-        alert('Briefing generation started for all active models.')
+      .then(res => {
+        if (res.ok) {
+           alert('Briefing generation started for all active models.')
+        } else {
+           alert('Failed to trigger briefing. Administrative access required.')
+        }
         setLoading(false)
+      })
+      .catch(err => {
+        setError(err.message)
+        setLoading(false)
+      })
+  }
+
+  const handleLogout = () => {
+    fetch('/api/auth/logout', { method: 'POST' })
+      .then(() => {
+        setIsAuthenticated(false)
+        setIsAdmin(false)
+        setUsername('')
+        if (activeMainTab === 'config' || activeMainTab === 'observability') {
+          setActiveMainTab('theaters')
+        }
       })
   }
 
@@ -93,13 +138,17 @@ function App() {
             <button className={activeMainTab === 'news' ? 'active' : ''} onClick={() => setActiveMainTab('news')}>News</button>
             <button className={activeMainTab === 'theaters' ? 'active' : ''} onClick={() => setActiveMainTab('theaters')}>Theaters</button>
             <button className={activeMainTab === 'investments' ? 'active' : ''} onClick={() => setActiveMainTab('investments')}>Investments</button>
-            <button className={activeMainTab === 'config' ? 'active' : ''} onClick={() => setActiveMainTab('config')}>Config</button>
-            <button className={activeMainTab === 'observability' ? 'active' : ''} onClick={() => setActiveMainTab('observability')}>Observability</button>
+            {isAdmin && (
+              <>
+                <button className={activeMainTab === 'config' ? 'active' : ''} onClick={() => setActiveMainTab('config')}>Config</button>
+                <button className={activeMainTab === 'observability' ? 'active' : ''} onClick={() => setActiveMainTab('observability')}>Observability</button>
+              </>
+            )}
           </nav>
         </div>
         
         <div className="header-right">
-          {(activeMainTab === 'news' || activeMainTab === 'theaters') && (
+          {(activeMainTab === 'news' || activeMainTab === 'theaters') && configs.length > 0 && (
             <div className="model-switcher">
               <label>Brain:</label>
               <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
@@ -107,6 +156,19 @@ function App() {
               </select>
             </div>
           )}
+          
+          <div className="auth-controls">
+            {isAuthenticated ? (
+              <div className="user-info">
+                <User size={16} color="#58a6ff" />
+                <span className="username">{username}</span>
+                <button className="icon-btn" onClick={handleLogout} title="Logout"><LogOut size={16}/></button>
+              </div>
+            ) : (
+              <button className="login-trigger-btn" onClick={() => setShowLogin(true)}>Admin Login</button>
+            )}
+          </div>
+
           {activeMainTab === 'news' && (
             <nav className="sub-tabs">
               <button className={activeNewsTab === 'briefing' ? 'active' : ''} onClick={() => setActiveNewsTab('briefing')}>Briefing</button>
@@ -119,48 +181,53 @@ function App() {
       <main className="app-content">
         {error && <div className="error-banner">Error: {error}</div>}
         
-        {activeMainTab === 'news' && (
-          <>
-            {loading && <div className="loader">Fusing intelligence...</div>}
-            {activeNewsTab === 'briefing' ? (
-              <BriefingView 
-                briefings={briefings.filter(b => !['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
-                loading={loading} 
-                onTrigger={triggerBriefing} 
-              />
-            ) : (
-              <div className="live-feed">
-                <h2>Latest Headlines</h2>
-                <ul className="news-list">
-                  {articles.map((article, index) => (
-                    <li key={index} className="news-item">
-                      <a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </>
+        <div className={`content-wrapper ${loading ? 'is-loading' : ''}`}>
+          {activeMainTab === 'news' && (
+            <>
+              {activeNewsTab === 'briefing' ? (
+                <BriefingView 
+                  briefings={briefings.filter(b => !['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
+                  loading={loading} 
+                  onTrigger={isAdmin ? triggerBriefing : undefined} 
+                />
+              ) : (
+                <div className="live-feed">
+                  <h2>Latest Headlines</h2>
+                  <ul className="news-list">
+                    {articles.map((article, index) => (
+                      <li key={index} className="news-item">
+                        <a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeMainTab === 'theaters' && (
+             <BriefingView 
+               briefings={briefings.filter(b => ['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
+               loading={loading} 
+               onTrigger={isAdmin ? triggerBriefing : undefined} 
+             />
+          )}
+
+          {activeMainTab === 'investments' && <InvestmentsView />}
+
+          {activeMainTab === 'config' && isAdmin && <ConfigView />}
+
+          {activeMainTab === 'observability' && isAdmin && <ObservabilityView />}
+        </div>
+
+        {loading && <div className="global-loader-overlay">Fusing intelligence...</div>}
+        
+        {showLogin && (
+          <LoginView 
+            onLoginSuccess={() => { fetchAuthStatus(); setShowLogin(false); }} 
+            onCancel={() => setShowLogin(false)} 
+          />
         )}
-
-        {activeMainTab === 'theaters' && (
-           <BriefingView 
-             briefings={briefings.filter(b => ['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
-             loading={loading} 
-             onTrigger={triggerBriefing} 
-           />
-        )}
-
-        {activeMainTab === 'investments' && (
-          <div className="placeholder-view">
-            <h2>Investment Portfolio</h2>
-            <p>Module coming soon.</p>
-          </div>
-        )}
-
-        {activeMainTab === 'config' && <ConfigView />}
-
-        {activeMainTab === 'observability' && <ObservabilityView />}
       </main>
     </div>
   )
