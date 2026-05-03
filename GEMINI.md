@@ -36,8 +36,7 @@ The application is designed to be built on the host and run in a container to en
     docker compose logs -f app
     ```
 
-   ### Configuration
-   The application uses environment variables for database connectivity, defaulting to local settings if not provided:
-   - `DB_URL`: JDBC connection string (default: `jdbc:postgresql://localhost:5433/hud`)
-   - `DB_USER`: Database username (default: `postgres`)
-   - `DB_PASS`: Database password (default: `password`)
+### Configuration & Persistence
+- **Database Durability**: We use a named Docker volume (`hud_db_data`) to ensure that user accounts, model configurations, and historical briefings are preserved across restarts.
+- **Wiping Data**: To completely reset the application state, run `docker compose down -v`.
+- **DB Credentials**: Default internal credentials are `huduser` / `hudpass`. The database is mapped to port **5433** on the host for manual inspection or backup.
