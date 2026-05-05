@@ -12,6 +12,8 @@ export interface DailyBriefing {
   generatedAt: string;
   category: BriefingCategory;
   markdownContent: string;
+  htmlContent?: string;
+  modelName?: string;
 }
 
 export type PipelineStatus = 'PENDING' | 'SUCCESS' | 'FAILED';

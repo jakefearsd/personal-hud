@@ -449,6 +449,130 @@ body {
   cursor: pointer;
 }
 
+/* Scheduling Config Styles */
+.scheduling-config {
+  margin-top: 3rem;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.schedule-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.schedule-card.active {
+  border-left: 4px solid var(--accent-color);
+}
+
+.schedule-card.inactive {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+
+.schedule-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cat-icon {
+  background-color: rgba(88, 166, 255, 0.1);
+  padding: 0.75rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cat-name {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.last-run {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.schedule-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.cron-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #21262d;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.cron-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.85rem;
+  width: 100px;
+  outline: none;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toggle-btn.on {
+  color: var(--success-color);
+  border-color: var(--success-color);
+  background-color: rgba(63, 185, 80, 0.1);
+}
+
+.toggle-btn.off {
+  color: var(--error-color);
+  border-color: var(--error-color);
+}
+
+.cron-help {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.cron-help code {
+  color: var(--accent-color);
+  background: rgba(88, 166, 255, 0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+
 .placeholder-view {
   text-align: center;
   padding: 10rem 0;
@@ -557,6 +681,11 @@ body {
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
 .view-header h2 {
   font-size: 1.5rem;
   font-weight: 400;
@@ -564,6 +693,9 @@ body {
 }
 
 .trigger-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   background-color: #21262d;
   color: var(--accent-color);
   border: 1px solid var(--border-color);
@@ -571,12 +703,21 @@ body {
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+}
+
+.trigger-btn.secondary {
+  color: var(--error-color);
 }
 
 .trigger-btn:hover:not(:disabled) {
   background-color: #30363d;
   border-color: #8b949e;
+}
+
+.trigger-btn.secondary:hover:not(:disabled) {
+  border-color: var(--error-color);
+  background-color: rgba(248, 81, 73, 0.1);
 }
 
 .trigger-btn:disabled {
@@ -601,14 +742,47 @@ body {
   gap: 1rem;
 }
 
+.briefing-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.timestamp {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-family: monospace;
+  opacity: 0.7;
+}
+
 .briefing-card h3 {
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--accent-color);
   letter-spacing: 0.1em;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-color);
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.model-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  background-color: rgba(88, 166, 255, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  font-family: monospace;
 }
 
 .markdown-body {
@@ -637,6 +811,48 @@ body {
 
 .markdown-body strong {
   color: var(--accent-color);
+}
+
+.markdown-body .tactical-link {
+  color: var(--accent-color);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--accent-color);
+  transition: all 0.2s;
+}
+
+.markdown-body .tactical-link:hover {
+  background-color: rgba(88, 166, 255, 0.1);
+  border-bottom-style: solid;
+}
+
+.markdown-body .tactical-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--border-color);
+}
+
+.markdown-body .tactical-table th {
+  background-color: rgba(88, 166, 255, 0.1);
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.markdown-body .tactical-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.markdown-body .tactical-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.markdown-body del {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  opacity: 0.6;
 }
 
 /* Loader & States */

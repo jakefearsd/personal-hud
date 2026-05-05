@@ -20,7 +20,7 @@ function App() {
   const [activeMainTab, setActiveMainTab] = useState<MainTab>('theaters')
   const [activeNewsTab, setActiveNewsTab] = useState<NewsTab>('briefing')
   const [articles, setArticles] = useState<NewsArticle[]>([])
-  const [briefings, setBriefings] = useState<DailyBriefing[]>([])
+  const [briefingCache, setBriefingCache] = useState<Record<string, DailyBriefing[]>>({})
   const [configs, setConfigs] = useState<LlmConfig[]>([])
   const [selectedModel, setSelectedModel] = useState<string>('')
   const [loading, setLoading] = useState(false)
@@ -50,7 +50,10 @@ function App() {
         if (Array.isArray(data)) {
           setConfigs(data)
           const active = data.find((c: any) => c.active)
-          if (active && !selectedModel) setSelectedModel(active.name)
+          if (active && !selectedModel) {
+            const providerPrefix = active.provider === 'GEMINI' ? 'Cloud' : 'Local';
+            setSelectedModel(`${providerPrefix}: ${active.name} [${active.modelName}]`)
+          }
         }
       })
       .catch(err => console.error("Failed to fetch configs", err))
@@ -72,11 +75,18 @@ function App() {
 
   const fetchLatestBriefings = useCallback((model?: string) => {
     setLoading(true)
+    const currentModel = model || 'global';
     const url = model ? `/api/briefings/latest?modelName=${encodeURIComponent(model)}` : '/api/briefings/latest'
+    
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        setBriefings(Array.isArray(data) ? data : [])
+        if (Array.isArray(data)) {
+           setBriefingCache(prev => ({
+             ...prev,
+             [currentModel]: data
+           }));
+        }
         setLoading(false)
       })
       .catch(err => {
@@ -129,6 +139,14 @@ function App() {
       })
   }
 
+  // Improved selection logic: 
+  // 1. Try selected model specific briefings.
+  // 2. If selected model has NO briefings (empty array), but global DOES, use global.
+  // 3. This prevents the "flash and disappear" when a model-specific run hasn't happened yet.
+  const modelBriefings = briefingCache[selectedModel];
+  const globalBriefings = briefingCache['global'] || [];
+  const briefings = (modelBriefings && modelBriefings.length > 0) ? modelBriefings : globalBriefings;
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -152,7 +170,11 @@ function App() {
             <div className="model-switcher">
               <label>Brain:</label>
               <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
-                {configs.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {configs.map(c => {
+                   const providerPrefix = c.provider === 'GEMINI' ? 'Cloud' : 'Local';
+                   const fullName = `${providerPrefix}: ${c.name} [${c.modelName}]`;
+                   return <option key={c.id} value={fullName}>{fullName}</option>;
+                })}
               </select>
             </div>
           )}
@@ -186,7 +208,8 @@ function App() {
             <>
               {activeNewsTab === 'briefing' ? (
                 <BriefingView 
-                  briefings={briefings.filter(b => !['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
+                  briefings={briefings} 
+                  type="general"
                   loading={loading} 
                   onTrigger={isAdmin ? triggerBriefing : undefined} 
                 />
@@ -207,7 +230,8 @@ function App() {
 
           {activeMainTab === 'theaters' && (
              <BriefingView 
-               briefings={briefings.filter(b => ['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'].includes(b.category))} 
+               briefings={briefings} 
+               type="theater"
                loading={loading} 
                onTrigger={isAdmin ? triggerBriefing : undefined} 
              />

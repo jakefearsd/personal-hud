@@ -22,6 +22,9 @@ public class DailyBriefing {
     @Column(columnDefinition = "TEXT")
     private String markdownContent;
 
+    @Column(columnDefinition = "TEXT")
+    private String htmlContent;
+
     public DailyBriefing() {}
 
     public DailyBriefing(java.time.LocalDateTime generatedAt, BriefingCategory category, String modelName, String markdownContent) {
@@ -42,4 +45,6 @@ public class DailyBriefing {
     public void setModelName(String modelName) { this.modelName = modelName; }
     public String getMarkdownContent() { return markdownContent; }
     public void setMarkdownContent(String markdownContent) { this.markdownContent = markdownContent; }
+    public String getHtmlContent() { return htmlContent; }
+    public void setHtmlContent(String htmlContent) { this.htmlContent = htmlContent; }
 }

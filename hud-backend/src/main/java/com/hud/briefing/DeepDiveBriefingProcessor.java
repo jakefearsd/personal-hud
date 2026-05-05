@@ -21,11 +21,11 @@ public class DeepDiveBriefingProcessor extends BriefingProcessor {
 
     @Override
     protected int getLinkLimit() { 
-        return (category == BriefingCategory.GLOBAL_SITREP) ? 3 : 1; 
+        return (category == BriefingCategory.GLOBAL_SITREP) ? 6 : 4; 
     }
 
     @Override
-    protected int getMinRequiredChars() { return 1500; }
+    protected int getMinRequiredChars() { return 2500; }
 
     @Override
     protected String synthesize(String rawSignal) {

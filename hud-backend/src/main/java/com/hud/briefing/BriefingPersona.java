@@ -60,16 +60,4 @@ public record BriefingPersona(String name, String role, String focus, String ins
         "Proxy movements, escalation cycles, and tactical posture",
         "Analyze the 'Axis of Resistance' activities and Israeli/Coalition tactical responses."
     );
-
-    public static BriefingPersona of(BriefingCategory category) {
-        return switch (category) {
-            case WORLD_NEWS -> WORLD_NEWS;
-            case US_NEWS -> US_NEWS;
-            case FINANCE -> FINANCE;
-            case TECHNOLOGY -> TECHNOLOGY;
-            case GLOBAL_SITREP -> GLOBAL_SITREP;
-            case THEATER_UKRAINE -> THEATER_UKRAINE;
-            case THEATER_MIDDLE_EAST -> THEATER_MIDDLE_EAST;
-        };
-    }
 }

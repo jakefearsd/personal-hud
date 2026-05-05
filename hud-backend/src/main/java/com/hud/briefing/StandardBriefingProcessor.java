@@ -20,10 +20,10 @@ public class StandardBriefingProcessor extends BriefingProcessor {
     }
 
     @Override
-    protected int getLinkLimit() { return 3; }
+    protected int getLinkLimit() { return 6; }
 
     @Override
-    protected int getMinRequiredChars() { return 800; }
+    protected int getMinRequiredChars() { return 1500; }
 
     @Override
     protected String synthesize(String rawSignal) {

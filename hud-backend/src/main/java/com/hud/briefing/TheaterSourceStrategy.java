@@ -2,33 +2,52 @@ package com.hud.briefing;
 
 import com.hud.news.PlaywrightScraperService;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class IswSourceStrategy implements BriefingSourceStrategy {
+public class TheaterSourceStrategy implements BriefingSourceStrategy {
 
     private final PlaywrightScraperService scraperService;
 
-    public IswSourceStrategy(PlaywrightScraperService scraperService) {
+    public TheaterSourceStrategy(PlaywrightScraperService scraperService) {
         this.scraperService = scraperService;
     }
 
     @Override
     public List<String> getLinks(String query, int limit) {
-        System.out.println("IswSourceStrategy: Searching for '" + query + "' links...");
-        String iswSelector = "a[href*='offensive-campaign-assessment'], " +
-                             "a[href*='conflict-update'], " +
-                             "a[href*='ukraine-conflict-updates'], " +
-                             "a[href*='iran-update'], " +
-                             "a[href*='israel-hamas-war-update']";
-        
+        List<String> aggregatedLinks = new ArrayList<>();
+        if (query == null || query.isBlank()) {
+            return aggregatedLinks;
+        }
+
+        String[] sources = query.split(",");
+        int limitPerSource = Math.max(1, limit / sources.length);
+
+        for (String source : sources) {
+            String trimmed = source.trim();
+            if (trimmed.startsWith("http")) {
+                // RSS feed (like Defense One, War on the Rocks)
+                System.out.println("TheaterSourceStrategy: Scraping RSS: " + trimmed);
+                aggregatedLinks.addAll(scraperService.getLinksFromRss(trimmed, limitPerSource));
+            } else if (trimmed.startsWith("isw-")) {
+                // ISW specific parsing
+                String iswQuery = trimmed.substring(4);
+                System.out.println("TheaterSourceStrategy: Fetching ISW for: " + iswQuery);
+                aggregatedLinks.addAll(getIswLinks(iswQuery, limitPerSource));
+            }
+        }
+
+        return aggregatedLinks.size() > limit ? aggregatedLinks.subList(0, limit) : aggregatedLinks;
+    }
+
+    private List<String> getIswLinks(String iswQuery, int limit) {
         List<String> links = scraperService.getIswLinks(15);
-        System.out.println("IswSourceStrategy: Total raw links found: " + links.size());
-        
         List<String> filtered;
-        if ("ukraine".equalsIgnoreCase(query)) {
-            // Assessment reports contain the narrative; 'updates' are often just link lists
+        
+        if ("ukraine".equalsIgnoreCase(iswQuery)) {
             filtered = links.stream()
                     .filter(l -> l.contains("offensive-campaign-assessment"))
                     .limit(limit)
@@ -40,7 +59,7 @@ public class IswSourceStrategy implements BriefingSourceStrategy {
                         .limit(limit)
                         .collect(Collectors.toList());
             }
-        } else if ("mideast".equalsIgnoreCase(query)) {
+        } else if ("mideast".equalsIgnoreCase(iswQuery)) {
             filtered = links.stream()
                     .filter(l -> l.contains("iran-update") || l.contains("israel-hamas-war") || l.contains("middle-east"))
                     .limit(limit)
@@ -48,8 +67,6 @@ public class IswSourceStrategy implements BriefingSourceStrategy {
         } else {
             filtered = links.stream().limit(limit).collect(Collectors.toList());
         }
-        
-        System.out.println("IswSourceStrategy: Returning " + filtered.size() + " filtered links.");
         return filtered;
     }
 

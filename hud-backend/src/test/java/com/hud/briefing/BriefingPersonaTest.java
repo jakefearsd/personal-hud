@@ -9,15 +9,15 @@ class BriefingPersonaTest {
 
     @Test
     void shouldReturnCorrectPersonaForCategory() {
-        assertEquals("Geopolitical Strategist", BriefingPersona.of(BriefingCategory.WORLD_NEWS).name());
-        assertEquals("Ukraine Ops Officer", BriefingPersona.of(BriefingCategory.THEATER_UKRAINE).name());
-        assertEquals("Theater Command Analyst", BriefingPersona.of(BriefingCategory.GLOBAL_SITREP).name());
+        assertEquals("Geopolitical Strategist", BriefingCategory.WORLD_NEWS.getPersona().name());
+        assertEquals("Ukraine Ops Officer", BriefingCategory.THEATER_UKRAINE.getPersona().name());
+        assertEquals("Theater Command Analyst", BriefingCategory.GLOBAL_SITREP.getPersona().name());
     }
 
     @Test
     void shouldHaveValidInstructions() {
         for (BriefingCategory category : BriefingCategory.values()) {
-            BriefingPersona persona = BriefingPersona.of(category);
+            BriefingPersona persona = category.getPersona();
             assertNotNull(persona.name());
             assertNotNull(persona.instruction());
             assertNotNull(persona.focus());

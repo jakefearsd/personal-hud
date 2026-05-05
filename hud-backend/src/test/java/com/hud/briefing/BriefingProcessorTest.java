@@ -27,7 +27,7 @@ class BriefingProcessorTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        processor = new StandardBriefingProcessor(scraperService, chatModel, sourceStrategy, synthesizer, BriefingPersona.of(BriefingCategory.WORLD_NEWS));
+        processor = new StandardBriefingProcessor(scraperService, chatModel, sourceStrategy, synthesizer, BriefingCategory.WORLD_NEWS.getPersona());
     }
 
     @Test
@@ -43,7 +43,7 @@ class BriefingProcessorTest {
 
         // Assert
         assertEquals("Synthesized Intelligence", result);
-        verify(sourceStrategy).getLinks("test query", 3);
+        verify(sourceStrategy).getLinks("test query", 6);
         verify(scraperService).extractFullText("http://test.com/1");
         verify(synthesizer).synthesizeStandard(eq(chatModel), any(), contains("Valid situational intelligence"));
     }

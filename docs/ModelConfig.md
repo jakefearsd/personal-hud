@@ -15,7 +15,7 @@ Used for running models like **Gemma4 8B** on your local network/hardware.
 Used for high-reasoning tasks utilizing Google's 1.5 Pro or Flash models.
 - **Config Requirements**:
     - `API Key`: Your secret key from [Google AI Studio](https://aistudio.google.com/).
-    - `Model Name`: e.g., `gemini-1.5-pro` or `gemini-1.5-flash`.
+    - `Model Name`: e.g., `gemini-2.0-flash` or `gemini-2.0-pro-exp-02-05`.
 - **Note**: A single daily run (7 categories) comfortably fits within the **Free Tier** limits.
 
 ## Administrative Interface

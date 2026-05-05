@@ -27,7 +27,7 @@ class IntelligenceSynthesizerTest {
     void shouldSynthesizeStandardBriefing() {
         when(model.generate(anyString())).thenReturn("Narrative Output");
         
-        String result = synthesizer.synthesizeStandard(model, BriefingPersona.of(BriefingCategory.WORLD_NEWS), "Raw Data");
+        String result = synthesizer.synthesizeStandard(model, BriefingCategory.WORLD_NEWS.getPersona(), "Raw Data");
 
         assertEquals("Narrative Output", result);
         verify(model).generate(contains("Geopolitical Strategist"));

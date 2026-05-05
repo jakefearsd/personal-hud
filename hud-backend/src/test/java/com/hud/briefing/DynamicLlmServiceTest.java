@@ -33,7 +33,7 @@ class DynamicLlmServiceTest {
         List<DynamicLlmService.NamedChatModel> models = service.getActiveModels();
 
         assertEquals(1, models.size());
-        assertEquals("Local", models.get(0).name());
+        assertEquals("Local: Local [gemma]", models.get(0).name());
         assertEquals(model, models.get(0).model());
     }
 }

@@ -37,12 +37,16 @@ public class IntelligenceSynthesizer {
         // Stage 2: Kinetic Impact
         String strikes = model.generate(
             "TASK: Extract kinetic strike data (Target, Location, Distance). " +
-            "OUTPUT: Markdown Table. Header: '## Kinetic Impact'.\n\nDATA:\n" + data);
+            "STRICT RULE: Output MUST be a valid GFM Markdown Table. " +
+            "STRICT RULE: Every Markdown row MUST be on its own line. " +
+            "STRICT RULE: Ensure the separator row (e.g., | --- | --- |) is present. " +
+            "HEADER: '## Kinetic Impact'\n\nDATA:\n" + data);
             
         // Stage 3: Innovation & Adaptation
         String innovation = model.generate(
-            "TASK: Identify 3 battlefield innovations (Tactics, EW, Drones). " +
-            "OUTPUT: Bullet points. Header: '## Innovation & Adaptation'.\n\nDATA:\n" + data);
+            "TASK: Identify battlefield innovations (Tactics, EW, Drones). " +
+            "OUTPUT: Clean bullet points. " +
+            "HEADER: '## Innovation & Adaptation'\n\nDATA:\n" + data);
         
         return String.format("# %s THEATER REPORT\n\n## Tactical Momentum\n%s\n\n%s\n\n%s", 
             category.name().replace("THEATER_", ""), tempo, strikes, innovation);

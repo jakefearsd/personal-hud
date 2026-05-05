@@ -21,17 +21,20 @@ public class AutomatedBriefingService {
     private final BriefingProcessorFactory processorFactory;
     private final TransactionTemplate transactionTemplate;
     private final PipelineRunRepository pipelineRunRepository;
+    private final MarkdownService markdownService;
 
     public AutomatedBriefingService(DynamicLlmService llmService, 
                                     DailyBriefingRepository repository,
                                     BriefingProcessorFactory processorFactory,
                                     TransactionTemplate transactionTemplate,
-                                    PipelineRunRepository pipelineRunRepository) {
+                                    PipelineRunRepository pipelineRunRepository,
+                                    MarkdownService markdownService) {
         this.llmService = llmService;
         this.repository = repository;
         this.processorFactory = processorFactory;
         this.transactionTemplate = transactionTemplate;
         this.pipelineRunRepository = pipelineRunRepository;
+        this.markdownService = markdownService;
     }
 
     @Async
@@ -68,10 +71,25 @@ public class AutomatedBriefingService {
         }
     }
 
+    @Async
+    public void generateForCategory(BriefingCategory category) {
+        List<DynamicLlmService.NamedChatModel> activeModels = llmService.getActiveModels();
+        LocalDate today = LocalDate.now();
+        String query = category.getDefaultQuery();
+        
+        for (DynamicLlmService.NamedChatModel model : activeModels) {
+            try {
+                generateForCategory(today, category, query, model);
+            } catch (Exception e) {
+                System.err.println("Async category run failed for " + category + " [" + model.name() + "]: " + e.getMessage());
+            }
+        }
+    }
+
     private void executeFullPipeline(LocalDate today, DynamicLlmService.NamedChatModel model) {
         // News Domain
         for (BriefingCategory category : BriefingCategory.values()) {
-            String query = getQueryForCategory(category);
+            String query = category.getDefaultQuery();
             try { 
                 generateForCategory(today, category, query, model); 
             } catch (Exception e) { 
@@ -92,6 +110,7 @@ public class AutomatedBriefingService {
                 // Save the synthesized briefing
                 repository.deleteByCategoryAndModelNameAndGeneratedAtAfter(category, model.name(), LocalDate.now().atStartOfDay());
                 DailyBriefing briefing = new DailyBriefing(LocalDateTime.now(), category, model.name(), content);
+                briefing.setHtmlContent(markdownService.renderToHtml(content));
                 repository.save(briefing);
 
                 // Update pipeline run status to SUCCESS
@@ -112,17 +131,5 @@ public class AutomatedBriefingService {
             });
             throw e; // Rethrow for the main loop to log
         }
-    }
-
-    private String getQueryForCategory(BriefingCategory category) {
-        return switch (category) {
-            case WORLD_NEWS -> "https://feeds.bbci.co.uk/news/world/rss.xml";
-            case US_NEWS -> "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml";
-            case FINANCE -> "https://feeds.bbci.co.uk/news/business/rss.xml";
-            case TECHNOLOGY -> "hn";
-            case THEATER_UKRAINE -> "ukraine";
-            case THEATER_MIDDLE_EAST -> "mideast";
-            case GLOBAL_SITREP -> "all";
-        };
     }
 }

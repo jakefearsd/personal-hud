@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { PipelineRun } from './types';
-import { Activity, CheckCircle, AlertCircle, Clock, RefreshCcw } from 'lucide-react';
+import { Activity, CheckCircle, AlertCircle, Clock, RefreshCcw, Trash2 } from 'lucide-react';
 
 export const ObservabilityView = () => {
   const [runs, setRuns] = useState<PipelineRun[]>([]);
@@ -16,6 +16,21 @@ export const ObservabilityView = () => {
       })
       .catch(() => {
         setRuns([]);
+        setLoading(false);
+      });
+  };
+
+  const flushRuns = () => {
+    if (!window.confirm('Are you sure you want to flush all observability logs?')) return;
+    
+    setLoading(true);
+    fetch('/api/pipelines', { method: 'DELETE' })
+      .then(() => {
+        setRuns([]);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to flush logs:', err);
         setLoading(false);
       });
   };
@@ -52,10 +67,16 @@ export const ObservabilityView = () => {
     <div className="observability-view">
       <div className="view-header">
         <h2>Pipeline Observability</h2>
-        <button className="trigger-btn" onClick={fetchRuns} disabled={loading}>
-          <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="header-actions">
+          <button className="trigger-btn secondary" onClick={flushRuns} disabled={loading || runs.length === 0}>
+            <Trash2 size={16} />
+            Flush Logs
+          </button>
+          <button className="trigger-btn" onClick={fetchRuns} disabled={loading}>
+            <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="pipeline-table-container">

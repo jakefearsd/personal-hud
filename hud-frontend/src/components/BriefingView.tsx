@@ -4,6 +4,7 @@ import type { DailyBriefing, BriefingCategory } from './types';
 interface Props {
   briefings: DailyBriefing[];
   loading: boolean;
+  type: 'general' | 'theater';
   onTrigger?: () => void;
 }
 
@@ -17,11 +18,19 @@ const categoryTitles: Record<BriefingCategory, string> = {
   'THEATER_MIDDLE_EAST': 'Middle East Theater'
 };
 
-export const BriefingView = ({ briefings, loading, onTrigger }: Props) => {
+const THEATER_CATEGORIES: BriefingCategory[] = ['THEATER_UKRAINE', 'THEATER_MIDDLE_EAST', 'GLOBAL_SITREP'];
+
+export const BriefingView = ({ briefings, loading, type, onTrigger }: Props) => {
+  const filteredBriefings = briefings.filter(b => 
+    type === 'theater' 
+      ? THEATER_CATEGORIES.includes(b.category)
+      : !THEATER_CATEGORIES.includes(b.category)
+  );
+
   return (
     <div className="briefing-view">
       <div className="view-header">
-        <h2>Strategic Daily Briefing</h2>
+        <h2>{type === 'theater' ? 'Theater Intelligence' : 'Strategic Daily Briefing'}</h2>
         {onTrigger && (
           <button className="trigger-btn" onClick={onTrigger} disabled={loading}>
             {loading ? 'Generating...' : 'Refresh Briefing'}
@@ -29,19 +38,33 @@ export const BriefingView = ({ briefings, loading, onTrigger }: Props) => {
         )}
       </div>
 
-      {briefings.length === 0 && !loading && (
+      {filteredBriefings.length === 0 && !loading && (
         <div className="empty-state">
-          <p>No briefings generated for today yet.</p>
+          <p>No {type === 'theater' ? 'theater reports' : 'briefings'} generated for today yet.</p>
           {onTrigger && <button onClick={onTrigger}>Generate Now</button>}
         </div>
       )}
 
       <div className="briefing-grid">
-        {briefings.map((b) => (
+        {filteredBriefings.map((b) => (
           <div key={b.id} className="briefing-card">
-            <h3>{categoryTitles[b.category]}</h3>
+            <div className="briefing-card-header">
+              <div className="header-titles">
+                <h3>{categoryTitles[b.category] || b.category}</h3>
+                <span className="timestamp">{new Date(b.generatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+              </div>
+              {b.modelName && (
+                <span className="model-tag" title="Intelligence Source">
+                  {b.modelName}
+                </span>
+              )}
+            </div>
             <div className="markdown-body">
-              <ReactMarkdown>{b.markdownContent}</ReactMarkdown>
+              {b.htmlContent ? (
+                <div dangerouslySetInnerHTML={{ __html: b.htmlContent }} />
+              ) : (
+                <ReactMarkdown>{b.markdownContent}</ReactMarkdown>
+              )}
             </div>
           </div>
         ))}

@@ -1,5 +1,6 @@
 package com.hud.briefing;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,5 +19,10 @@ public class PipelineController {
     @GetMapping
     public List<PipelineRun> getRecentRuns() {
         return repository.findTop50ByOrderByStartTimeDesc();
+    }
+
+    @DeleteMapping
+    public void flushAllRuns() {
+        repository.deleteAll();
     }
 }
