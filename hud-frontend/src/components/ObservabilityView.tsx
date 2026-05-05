@@ -35,11 +35,18 @@ export const ObservabilityView = () => {
       });
   };
 
-  const formatTime = (isoString: string) => {
+  const formatTimestamp = (isoString: string) => {
     try {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return 'N/A';
-      return d.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return d.toLocaleString([], { 
+        month: 'short', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+      });
     } catch (e) {
       return 'N/A';
     }
@@ -103,7 +110,7 @@ export const ObservabilityView = () => {
                   </div>
                 </td>
                 <td className="col-time">
-                  <Clock size={12} /> {formatTime(run.startTime)}
+                  <Clock size={12} /> {formatTimestamp(run.startTime)}
                 </td>
                 <td className="col-duration">
                    {calculateDuration(run.startTime, run.endTime)}
