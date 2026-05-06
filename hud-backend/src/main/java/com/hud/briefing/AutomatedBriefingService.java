@@ -1,6 +1,8 @@
 package com.hud.briefing;
 
 import com.hud.news.PlaywrightScraperService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,8 @@ import java.util.List;
  */
 @Service
 public class AutomatedBriefingService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AutomatedBriefingService.class);
 
     private final DynamicLlmService llmService;
     private final DailyBriefingRepository repository;
@@ -43,14 +47,14 @@ public class AutomatedBriefingService {
                 .orElseThrow(() -> new RuntimeException("Model config not found: " + configId));
         
         if (!config.isActive()) {
-            System.err.println("Refusing to run inactive model: " + config.getName());
+            logger.warn("Refusing to run inactive model: {}", config.getName());
             return;
         }
 
         DynamicLlmService.NamedChatModel model = llmService.buildSpecificModel(config);
         LocalDate today = LocalDate.now();
         
-        System.out.println("Starting targeted briefing run for model: " + model.name());
+        logger.info("Starting targeted briefing run for model: {}", model.name());
         executeFullPipeline(today, model);
     }
 
@@ -61,12 +65,12 @@ public class AutomatedBriefingService {
         List<DynamicLlmService.NamedChatModel> activeModels = llmService.getActiveModels();
         
         if (activeModels.isEmpty()) {
-            System.err.println("Aborting briefing: No active LLM configurations found.");
+            logger.error("Aborting briefing: No active LLM configurations found.");
             return;
         }
 
         for (DynamicLlmService.NamedChatModel model : activeModels) {
-            System.out.println("Starting daily briefing run for model: " + model.name());
+            logger.info("Starting daily briefing run for model: {}", model.name());
             executeFullPipeline(today, model);
         }
     }
@@ -81,7 +85,7 @@ public class AutomatedBriefingService {
             try {
                 generateForCategory(today, category, query, model);
             } catch (Exception e) {
-                System.err.println("Async category run failed for " + category + " [" + model.name() + "]: " + e.getMessage());
+                logger.error("Async category run failed for {} [{}]: {}", category, model.name(), e.getMessage(), e);
             }
         }
     }
@@ -93,7 +97,7 @@ public class AutomatedBriefingService {
             try { 
                 generateForCategory(today, category, query, model); 
             } catch (Exception e) { 
-                System.err.println("Failed generation for " + category + " [" + model.name() + "]: " + e.getMessage());
+                logger.error("Failed generation for {} [{}]: {}", category, model.name(), e.getMessage(), e);
             }
         }
     }
@@ -104,19 +108,21 @@ public class AutomatedBriefingService {
 
         try {
             BriefingProcessor processor = processorFactory.getProcessor(category, model.model());
-            String content = processor.process(query);
+            SynthesisResult result = processor.process(query);
             
             transactionTemplate.execute(status -> {
                 // Save the synthesized briefing
                 repository.deleteByCategoryAndModelNameAndGeneratedAtAfter(category, model.name(), LocalDate.now().atStartOfDay());
-                DailyBriefing briefing = new DailyBriefing(LocalDateTime.now(), category, model.name(), content);
-                briefing.setHtmlContent(markdownService.renderToHtml(content));
+                DailyBriefing briefing = new DailyBriefing(LocalDateTime.now(), category, model.name(), result.content());
+                briefing.setHtmlContent(markdownService.renderToHtml(result.content()));
                 repository.save(briefing);
 
-                // Update pipeline run status to SUCCESS
+                // Update pipeline run status to SUCCESS and save token metrics
                 PipelineRun current = pipelineRunRepository.findById(savedRun.getId()).orElseThrow();
                 current.setStatus(PipelineStatus.SUCCESS);
                 current.setEndTime(LocalDateTime.now());
+                current.setInputTokens(result.inputTokens());
+                current.setOutputTokens(result.outputTokens());
                 pipelineRunRepository.save(current);
                 return null;
             });

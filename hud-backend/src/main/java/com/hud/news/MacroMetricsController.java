@@ -45,4 +45,10 @@ public class MacroMetricsController {
         correlationService.correlateEvents();
         return "Market correlation analysis triggered.";
     }
+
+    @PostMapping("/sync")
+    public String triggerSync() {
+        service.syncHistoricalGaps();
+        return "Historical data sync triggered.";
+    }
 }

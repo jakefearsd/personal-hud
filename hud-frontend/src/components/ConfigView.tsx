@@ -120,9 +120,6 @@ const LlmConfigForm = ({ editingConfig, setEditingConfig, onSave, onReset, loadi
     { label: 'Gemini 3.1 Flash-Lite (Cost Optimized / Free Tier)', value: 'gemini-3.1-flash-lite-preview' },
     { label: 'Gemini 2.5 Pro (Stable / Paid Only)', value: 'gemini-2.5-pro' },
     { label: 'Gemini 2.5 Flash (Stable / Free Tier)', value: 'gemini-2.5-flash' },
-    { label: 'Gemini 2.5 Flash-Lite (Free Tier)', value: 'gemini-2.5-flash-lite' },
-    { label: 'Gemini 1.5 Pro (Legacy)', value: 'gemini-1.5-pro' },
-    { label: 'Gemini 1.5 Flash (Legacy)', value: 'gemini-1.5-flash' },
   ];
 
   const ollamaSuggestions = [

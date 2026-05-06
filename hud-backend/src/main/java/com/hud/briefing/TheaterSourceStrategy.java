@@ -1,6 +1,8 @@
 package com.hud.briefing;
 
 import com.hud.news.PlaywrightScraperService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import java.util.stream.Collectors;
 @Component
 public class TheaterSourceStrategy implements BriefingSourceStrategy {
 
+    private static final Logger logger = LoggerFactory.getLogger(TheaterSourceStrategy.class);
     private final PlaywrightScraperService scraperService;
 
     public TheaterSourceStrategy(PlaywrightScraperService scraperService) {
@@ -30,13 +33,17 @@ public class TheaterSourceStrategy implements BriefingSourceStrategy {
             String trimmed = source.trim();
             if (trimmed.startsWith("http")) {
                 // RSS feed (like Defense One, War on the Rocks)
-                System.out.println("TheaterSourceStrategy: Scraping RSS: " + trimmed);
+                logger.info("TheaterSourceStrategy: Scraping RSS: {}", trimmed);
                 aggregatedLinks.addAll(scraperService.getLinksFromRss(trimmed, limitPerSource));
             } else if (trimmed.startsWith("isw-")) {
                 // ISW specific parsing
                 String iswQuery = trimmed.substring(4);
-                System.out.println("TheaterSourceStrategy: Fetching ISW for: " + iswQuery);
+                logger.info("TheaterSourceStrategy: Fetching ISW for: {}", iswQuery);
                 aggregatedLinks.addAll(getIswLinks(iswQuery, limitPerSource));
+            } else if (trimmed.startsWith("csis-")) {
+                // CSIS specific parsing
+                logger.info("TheaterSourceStrategy: Fetching CSIS reports...");
+                aggregatedLinks.addAll(scraperService.getCsisLinks(limitPerSource));
             }
         }
 

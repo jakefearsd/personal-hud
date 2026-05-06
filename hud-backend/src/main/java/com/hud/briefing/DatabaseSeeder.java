@@ -1,5 +1,7 @@
 package com.hud.briefing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DatabaseSeeder {
 
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseSeeder.class);
     private final LlmConfigRepository llmRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -38,7 +41,7 @@ public class DatabaseSeeder {
 
     private void seedDefaultConfig() {
         if (llmRepository.count() == 0) {
-            System.out.println("Seeding default LLM configuration...");
+            logger.info("Seeding default LLM configuration...");
             LlmConfig config = new LlmConfig("Local Gemma", LlmProvider.OLLAMA, defaultModelName, true);
             config.setBaseUrl(defaultBaseUrl);
             config.setNumCtx(defaultNumCtx);
@@ -48,7 +51,7 @@ public class DatabaseSeeder {
 
     private void seedDefaultUser() {
         if (userRepository.count() == 0) {
-            System.out.println("Seeding default admin user...");
+            logger.info("Seeding default admin user...");
             AppUser admin = new AppUser("admin", passwordEncoder.encode("admin"), "ROLE_ADMIN");
             userRepository.save(admin);
         }

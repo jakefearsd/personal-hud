@@ -117,7 +117,17 @@ export const ObservabilityView = () => {
                 </td>
                 <td className="col-error">
                   {run.errorMessage && <span className="error-text">{run.errorMessage}</span>}
-                  {!run.errorMessage && run.status === 'SUCCESS' && <span className="success-text">Nominal completion</span>}
+                  {!run.errorMessage && run.status === 'SUCCESS' && (
+                    <span className="success-text">
+                      {run.inputTokens !== undefined && run.outputTokens !== undefined ? (
+                        <span className="token-metrics">
+                          In: {run.inputTokens.toLocaleString()} | Out: {run.outputTokens.toLocaleString()} tokens
+                        </span>
+                      ) : (
+                        "Nominal completion"
+                      )}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

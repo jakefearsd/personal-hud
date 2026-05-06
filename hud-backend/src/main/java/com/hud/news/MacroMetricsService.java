@@ -1,16 +1,31 @@
 package com.hud.news;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Collections;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Service
 public class MacroMetricsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(MacroMetricsService.class);
     private final PlaywrightScraperService scraperService;
     private final MacroMetricRepository repository;
     private final MetricHistoryRepository historyRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public MacroMetricsService(PlaywrightScraperService scraperService, 
                                MacroMetricRepository repository,
@@ -22,32 +37,112 @@ public class MacroMetricsService {
 
     @Scheduled(fixedRate = 3600000) // Run every hour
     public void updateMacroMetrics() {
-        System.out.println("Updating Macro Vitals Dashboard...");
-        
-        Map<String, String> tickers = Map.of(
-            "CL=F", "WTI Crude Oil",
-            "BZ=F", "Brent Crude Oil",
-            "DX-Y.NYB", "US Dollar Index",
-            "GC=F", "Gold",
-            "^VIX", "VIX (Volatility)",
-            "BTC-USD", "Bitcoin",
-            "ETH-USD", "Ethereum"
+        logger.info("Updating Macro Vitals Dashboard...");
+
+        Map<String, String> tickers = Map.ofEntries(
+            Map.entry("^GSPC", "S&P 500"),
+            Map.entry("^DJI", "Dow 30"),
+            Map.entry("^VIX", "VIX (Volatility)"),
+            Map.entry("^GDAXI", "DAX (Germany)"),
+            Map.entry("^FTSE", "FTSE 100 (UK)"),
+            Map.entry("^STOXX50E", "Euro Stoxx 50"),
+            Map.entry("^N225", "Nikkei 225 (Japan)"),
+            Map.entry("^HSI", "Hang Seng (HK)"),
+            Map.entry("000001.SS", "Shanghai Comp (China)"),
+            Map.entry("AGG", "US Aggregate Bond (AGG)"),
+            Map.entry("BNDX", "Intl Aggregate Bond (BNDX)"),
+            Map.entry("^TNX", "US 10Y Treasury Yield"),
+            Map.entry("BZ=F", "Brent Crude Oil"),
+            Map.entry("CL=F", "WTI Crude Oil"),
+            Map.entry("GC=F", "Gold"),
+            Map.entry("BTC-USD", "Bitcoin"),
+            Map.entry("ETH-USD", "Ethereum")
         );
 
         for (Map.Entry<String, String> entry : tickers.entrySet()) {
-            MacroMetric metric = scraperService.scrapeYahooMetric(entry.getKey(), entry.getValue());
-            if (metric != null) {
-                repository.save(metric);
-                historyRepository.save(new MetricHistory(metric.getTicker(), metric.getPrice(), metric.getChangePercent()));
+            try {
+                MacroMetric metric = scraperService.scrapeYahooMetric(entry.getKey(), entry.getValue());
+                if (metric != null) {
+                    repository.save(metric);
+                    historyRepository.save(new MetricHistory(metric.getTicker(), metric.getPrice(), metric.getChangePercent()));
+                }
+            } catch (Exception e) {
+                logger.error("Failed to update macro metric for {}: {}", entry.getKey(), e.getMessage(), e);
             }
         }
 
         // Special handling for Yield Spread
-        Double spread = scraperService.scrapeFredYieldSpread();
-        if (spread != null) {
-            MacroMetric metric = new MacroMetric("T10Y2Y", "10Y-2Y Yield Spread", spread, 0.0, 0.0);
-            repository.save(metric);
-            historyRepository.save(new MetricHistory("T10Y2Y", spread, 0.0));
+        try {
+            Double spread = scraperService.scrapeFredYieldSpread();
+            if (spread != null) {
+                MacroMetric metric = new MacroMetric("T10Y2Y", "10Y-2Y Yield Spread", spread, 0.0, 0.0);
+                repository.save(metric);
+                historyRepository.save(new MetricHistory("T10Y2Y", spread, 0.0));
+            }
+        } catch (Exception e) {
+            logger.error("Failed to update FRED yield spread: {}", e.getMessage(), e);
+        }
+    }
+
+    public void syncHistoricalGaps() {
+        List<String> symbols = List.of(
+            "^GSPC", "^DJI", "^VIX", "^GDAXI", "^FTSE", "^STOXX50E", 
+            "^N225", "^HSI", "000001.SS", "AGG", "BNDX", "^TNX", 
+            "BZ=F", "CL=F", "GC=F", "BTC-USD", "ETH-USD"
+        );
+        long now = Instant.now().getEpochSecond();
+        
+        for (String symbol : symbols) {
+            try {
+                LocalDateTime lastPoint = historyRepository.findTopByTickerOrderByTimestampDesc(symbol)
+                        .map(MetricHistory::getTimestamp)
+                        .orElse(LocalDateTime.now().minusYears(30));
+                
+                long start = lastPoint.atZone(ZoneId.systemDefault()).toEpochSecond() + 86400; // Start day after
+                if (start >= now - 86400 * 7) continue; // Less than a week of gap
+
+                logger.info("Syncing historical gaps for {} from {} to now", symbol, lastPoint);
+                fetchAndStoreYahooHistory(symbol, start, now);
+                
+            } catch (Exception e) {
+                logger.error("Failed to sync historical gaps for {}: {}", symbol, e.getMessage(), e);
+            }
+        }
+    }
+
+    private void fetchAndStoreYahooHistory(String symbol, long start, long end) throws Exception {
+        String url = String.format("https://query1.finance.yahoo.com/v8/finance/chart/%s?period1=%d&period2=%d&interval=1wk", symbol, start, end);
+        HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        JsonNode root = objectMapper.readTree(response.body());
+        JsonNode result = root.path("chart").path("result").get(0);
+        
+        if (result == null) return;
+
+        JsonNode timestamps = result.path("timestamp");
+        JsonNode closes = result.path("indicators").path("quote").get(0).path("close");
+
+        if (timestamps.isMissingNode() || closes.isMissingNode()) return;
+
+        for (int i = 0; i < timestamps.size(); i++) {
+            if (i >= closes.size()) break;
+            long ts = timestamps.get(i).asLong();
+            JsonNode closeNode = closes.get(i);
+            if (closeNode.isNull()) continue;
+            double close = closeNode.asDouble();
+            if (close == 0) continue;
+
+            LocalDateTime dt = LocalDateTime.ofInstant(Instant.ofEpochSecond(ts), ZoneId.systemDefault());
+            try {
+                historyRepository.save(new MetricHistory(symbol, close, 0.0, dt));
+            } catch (Exception e) {
+                // Ignore duplicates due to unique constraint
+            }
         }
     }
 

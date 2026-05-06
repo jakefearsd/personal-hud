@@ -20,15 +20,15 @@ public enum BriefingCategory {
         BriefingPersona.TECHNOLOGY
     ),
     GLOBAL_SITREP(
-        "https://warontherocks.com/feed/,https://www.defenseone.com/rss/all/,isw-global", 
+        "https://warontherocks.com/feed/,https://www.defenseone.com/rss/all/,isw-global,csis-global", 
         BriefingPersona.GLOBAL_SITREP
     ),
     THEATER_UKRAINE(
-        "https://warontherocks.com/feed/,https://www.defenseone.com/rss/all/,isw-ukraine", 
+        "https://warontherocks.com/feed/,https://www.defenseone.com/rss/all/,isw-ukraine,csis-global", 
         BriefingPersona.THEATER_UKRAINE
     ),
     THEATER_MIDDLE_EAST(
-        "https://warontherocks.com/feed/,https://www.defenseone.com/rss/all/,isw-mideast", 
+        "https://warontherocks.com/feed/,https://www.defenseone.com/rss/all/,isw-mideast,csis-global", 
         BriefingPersona.THEATER_MIDDLE_EAST
     );
 

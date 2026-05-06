@@ -1,6 +1,8 @@
 package com.hud.briefing;
 
 import com.hud.news.PlaywrightScraperService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -9,6 +11,7 @@ import java.util.List;
 @Component
 public class GeneralRssSourceStrategy implements BriefingSourceStrategy {
 
+    private static final Logger logger = LoggerFactory.getLogger(GeneralRssSourceStrategy.class);
     private final PlaywrightScraperService scraperService;
 
     public GeneralRssSourceStrategy(PlaywrightScraperService scraperService) {
@@ -29,7 +32,7 @@ public class GeneralRssSourceStrategy implements BriefingSourceStrategy {
         for (String feed : feeds) {
             String trimmedFeed = feed.trim();
             if (!trimmedFeed.isEmpty()) {
-                System.out.println("GeneralRssSourceStrategy: Scraping RSS: " + trimmedFeed);
+                logger.info("GeneralRssSourceStrategy: Scraping RSS: {}", trimmedFeed);
                 aggregatedLinks.addAll(scraperService.getLinksFromRss(trimmedFeed, limitPerFeed));
             }
         }

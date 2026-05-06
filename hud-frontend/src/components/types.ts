@@ -38,6 +38,8 @@ export interface PipelineRun {
   startTime: string;
   endTime: string | null;
   errorMessage: string | null;
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 export interface MacroMetric {

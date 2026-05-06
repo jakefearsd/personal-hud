@@ -27,7 +27,7 @@ class IswExtractionDebugTest {
         String url = links.get(0);
         System.out.println("Target URL: " + url);
         
-        String text = scraperService.extractFullText(url);
+        String text = scraperService.extractFullText(url, 0);
         System.out.println("Extracted text length: " + text.length());
         System.out.println("--- TEXT SNIPPET (First 2000 chars) ---");
         System.out.println(text.length() > 2000 ? text.substring(0, 2000) : text);

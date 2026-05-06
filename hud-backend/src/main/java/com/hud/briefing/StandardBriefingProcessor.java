@@ -20,13 +20,16 @@ public class StandardBriefingProcessor extends BriefingProcessor {
     }
 
     @Override
-    protected int getLinkLimit() { return 6; }
+    protected int getLinkLimit() { return 15; }
 
     @Override
     protected int getMinRequiredChars() { return 1500; }
 
     @Override
-    protected String synthesize(String rawSignal) {
+    protected int getScrapeDepth() { return 0; }
+
+    @Override
+    protected SynthesisResult synthesize(String rawSignal) {
         return synthesizer.synthesizeStandard(chatModel, persona, rawSignal);
     }
 }

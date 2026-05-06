@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { MacroMetric } from './types';
 import { TrendingUp, TrendingDown, RefreshCcw, Landmark, Fuel, Shield, AlertTriangle, BarChart2 } from 'lucide-react';
 import { MetricChart } from './MetricChart';
+import { ComparisonDashboard } from './ComparisonDashboard';
 
 export const InvestmentsView = () => {
   const [metrics, setMetrics] = useState<MacroMetric[]>([]);
@@ -96,6 +97,8 @@ export const InvestmentsView = () => {
       <div className="disclaimer">
         Market data is delayed by 15 minutes. High-resolution intelligence provided by HUD Analytical Engine.
       </div>
+
+      <ComparisonDashboard metrics={metrics} />
 
       {selectedMetric && (
         <MetricChart 

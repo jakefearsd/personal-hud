@@ -29,7 +29,7 @@ public abstract class BriefingProcessor {
     /**
      * The Template Method: Orchestrates the transition from Raw Signal to Intelligence.
      */
-    public final String process(String query) {
+    public final SynthesisResult process(String query) {
         List<String> links = sourceStrategy.getLinks(query, getLinkLimit());
         
         if (links.isEmpty()) {
@@ -47,12 +47,13 @@ public abstract class BriefingProcessor {
 
     protected abstract int getLinkLimit();
     protected abstract int getMinRequiredChars();
-    protected abstract String synthesize(String rawSignal);
+    protected abstract int getScrapeDepth();
+    protected abstract SynthesisResult synthesize(String rawSignal);
 
     protected String acquireSignal(List<String> links) {
         StringBuilder sb = new StringBuilder();
         for (String url : links) {
-            String text = scraperService.extractFullText(url);
+            String text = scraperService.extractFullText(url, getScrapeDepth());
             if (isPlausibleContent(text, url)) {
                 sb.append("\n--- START SOURCE ---\n").append(text).append("\n--- END SOURCE ---\n");
             }

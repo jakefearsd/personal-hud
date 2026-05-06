@@ -1,6 +1,10 @@
 package com.hud.briefing;
 
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.output.TokenUsage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -25,45 +29,52 @@ class IntelligenceSynthesizerTest {
 
     @Test
     void shouldSynthesizeStandardBriefing() {
-        when(model.generate(anyString())).thenReturn("Narrative Output");
+        Response<AiMessage> response = Response.from(AiMessage.from("Narrative Output"), new TokenUsage(10, 5));
+        when(model.generate(any(UserMessage.class))).thenReturn(response);
         
-        String result = synthesizer.synthesizeStandard(model, BriefingCategory.WORLD_NEWS.getPersona(), "Raw Data");
+        SynthesisResult result = synthesizer.synthesizeStandard(model, BriefingCategory.WORLD_NEWS.getPersona(), "Raw Data");
 
-        assertEquals("Narrative Output", result);
-        verify(model).generate(contains("Geopolitical Strategist"));
-        verify(model).generate(contains("Raw Data"));
+        assertEquals("Narrative Output", result.content());
+        assertEquals(10, result.inputTokens());
+        assertEquals(5, result.outputTokens());
+        verify(model).generate(argThat((UserMessage m) -> m.text().contains("Geopolitical Strategist")));
     }
 
     @Test
     void shouldFuseTheaterIntelligence() {
-        when(model.generate(anyString())).thenReturn("Tempo Analysis", "Kinetic Table", "Innovations");
+        Response<AiMessage> tempo = Response.from(AiMessage.from("Tempo Analysis"), new TokenUsage(10, 5));
+        Response<AiMessage> kinetic = Response.from(AiMessage.from("Kinetic Table"), new TokenUsage(10, 5));
+        Response<AiMessage> innovations = Response.from(AiMessage.from("Innovations"), new TokenUsage(10, 5));
         
-        String result = synthesizer.fuseTheaterIntelligence(model, BriefingCategory.THEATER_UKRAINE, "Frontline Intelligence Data");
+        when(model.generate(any(UserMessage.class))).thenReturn(tempo, kinetic, innovations);
+        
+        SynthesisResult result = synthesizer.fuseTheaterIntelligence(model, BriefingCategory.THEATER_UKRAINE, "Frontline Intelligence Data");
 
-        assertTrue(result.contains("# UKRAINE THEATER REPORT"));
-        assertTrue(result.contains("## Tactical Momentum"));
-        assertTrue(result.contains("Tempo Analysis"));
-        assertTrue(result.contains("Kinetic Table"));
-        assertTrue(result.contains("Innovations"));
+        assertTrue(result.content().contains("# UKRAINE THEATER REPORT"));
+        assertTrue(result.content().contains("## Tactical Momentum"));
+        assertTrue(result.content().contains("Tempo Analysis"));
+        assertTrue(result.content().contains("Kinetic Table"));
+        assertTrue(result.content().contains("Innovations"));
+        assertEquals(30, result.inputTokens());
+        assertEquals(15, result.outputTokens());
         
-        verify(model, times(3)).generate(anyString());
-        verify(model).generate(contains("Tactical Ground Analyst"));
-        verify(model).generate(contains("kinetic strike data"));
-        verify(model).generate(contains("battlefield innovations"));
+        verify(model, times(3)).generate(any(UserMessage.class));
     }
 
     @Test
     void shouldSynthesizeGlobalSitrep() {
-        when(model.generate(anyString())).thenReturn("Global Overview");
+        Response<AiMessage> response = Response.from(AiMessage.from("Global Overview"), new TokenUsage(20, 10));
+        when(model.generate(any(UserMessage.class))).thenReturn(response);
 
-        String result = synthesizer.synthesizeGlobalSitrep(model, "Global Data");
+        SynthesisResult result = synthesizer.synthesizeGlobalSitrep(model, "Global Data");
 
-        assertEquals("Global Overview", result);
-        verify(model).generate(contains("Global Theater Strategist"));
-        verify(model).generate(contains("Global Data"));
+        assertEquals("Global Overview", result.content());
+        assertEquals(20, result.inputTokens());
+        assertEquals(10, result.outputTokens());
+        verify(model).generate(argThat((UserMessage m) -> m.text().contains("Global Theater Strategist")));
     }
 
-    private void assertEquals(String expected, String actual) {
+    private void assertEquals(Object expected, Object actual) {
         org.junit.jupiter.api.Assertions.assertEquals(expected, actual);
     }
 }

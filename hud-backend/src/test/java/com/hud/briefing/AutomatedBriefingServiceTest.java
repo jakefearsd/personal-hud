@@ -49,7 +49,7 @@ class AutomatedBriefingServiceTest {
         
         BriefingProcessor mockProcessor = mock(BriefingProcessor.class);
         when(processorFactory.getProcessor(any(), any())).thenReturn(mockProcessor);
-        when(mockProcessor.process(anyString())).thenReturn("Content");
+        when(mockProcessor.process(anyString())).thenReturn(new SynthesisResult("Content", 100, 10));
         
         when(pipelineRunRepository.save(any())).thenReturn(new PipelineRun());
         when(pipelineRunRepository.findById(any())).thenReturn(Optional.of(new PipelineRun()));
@@ -77,7 +77,7 @@ class AutomatedBriefingServiceTest {
         
         BriefingProcessor mockProcessor = mock(BriefingProcessor.class);
         when(processorFactory.getProcessor(any(), any())).thenReturn(mockProcessor);
-        when(mockProcessor.process(anyString())).thenReturn("Content");
+        when(mockProcessor.process(anyString())).thenReturn(new SynthesisResult("Content", 100, 10));
         when(pipelineRunRepository.save(any())).thenReturn(new PipelineRun());
         when(pipelineRunRepository.findById(any())).thenReturn(Optional.of(new PipelineRun()));
 
@@ -107,7 +107,7 @@ class AutomatedBriefingServiceTest {
         
         BriefingProcessor mockProcessor = mock(BriefingProcessor.class);
         when(processorFactory.getProcessor(any(), any())).thenReturn(mockProcessor);
-        when(mockProcessor.process(anyString())).thenReturn("Content");
+        when(mockProcessor.process(anyString())).thenReturn(new SynthesisResult("Content", 100, 10));
         when(pipelineRunRepository.save(any())).thenReturn(new PipelineRun());
         when(pipelineRunRepository.findById(any())).thenReturn(Optional.of(new PipelineRun()));
 

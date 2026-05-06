@@ -35,16 +35,16 @@ class BriefingProcessorTest {
         // Arrange
         when(sourceStrategy.getLinks(anyString(), anyInt())).thenReturn(List.of("http://test.com/1"));
         String longContent = "Valid situational intelligence report that provides enough textual density to satisfy the high-resolution requirements of the analytic heads-up display system.".repeat(15);
-        when(scraperService.extractFullText("http://test.com/1")).thenReturn(longContent);
-        when(synthesizer.synthesizeStandard(any(), any(), anyString())).thenReturn("Synthesized Intelligence");
+        when(scraperService.extractFullText(eq("http://test.com/1"), anyInt())).thenReturn(longContent);
+        when(synthesizer.synthesizeStandard(any(), any(), anyString())).thenReturn(new SynthesisResult("Synthesized Intelligence", 100, 10));
 
         // Act
-        String result = processor.process("test query");
+        SynthesisResult result = processor.process("test query");
 
         // Assert
-        assertEquals("Synthesized Intelligence", result);
-        verify(sourceStrategy).getLinks("test query", 6);
-        verify(scraperService).extractFullText("http://test.com/1");
+        assertEquals("Synthesized Intelligence", result.content());
+        verify(sourceStrategy).getLinks("test query", 15);
+        verify(scraperService).extractFullText(eq("http://test.com/1"), anyInt());
         verify(synthesizer).synthesizeStandard(eq(chatModel), any(), contains("Valid situational intelligence"));
     }
 
@@ -59,7 +59,7 @@ class BriefingProcessorTest {
     @Test
     void shouldThrowExceptionWhenInsufficientSignal() {
         when(sourceStrategy.getLinks(anyString(), anyInt())).thenReturn(List.of("http://test.com"));
-        when(scraperService.extractFullText(anyString())).thenReturn("Too short signal");
+        when(scraperService.extractFullText(anyString(), anyInt())).thenReturn("Too short signal");
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> processor.process("test"));
         assertTrue(ex.getMessage().contains("Insufficient situational signal"));
@@ -68,10 +68,10 @@ class BriefingProcessorTest {
     @Test
     void shouldFilterNonPlausibleContent() {
         when(sourceStrategy.getLinks(anyString(), anyInt())).thenReturn(List.of("http://test.com/cookie", "http://test.com/valid"));
-        when(scraperService.extractFullText("http://test.com/cookie")).thenReturn("Before you continue... Accept all cookies");
+        when(scraperService.extractFullText(eq("http://test.com/cookie"), anyInt())).thenReturn("Before you continue... Accept all cookies");
         String longContent = "A long piece of valid situational content that meets the length requirements for processing and provides the necessary analytical depth.".repeat(15);
-        when(scraperService.extractFullText("http://test.com/valid")).thenReturn(longContent);
-        when(synthesizer.synthesizeStandard(any(), any(), anyString())).thenReturn("Success");
+        when(scraperService.extractFullText(eq("http://test.com/valid"), anyInt())).thenReturn(longContent);
+        when(synthesizer.synthesizeStandard(any(), any(), anyString())).thenReturn(new SynthesisResult("Success", 100, 10));
 
         processor.process("test");
 

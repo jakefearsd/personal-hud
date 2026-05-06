@@ -23,10 +23,14 @@ public class MetricHistory {
     public MetricHistory() {}
 
     public MetricHistory(String ticker, Double price, Double changePercent) {
+        this(ticker, price, changePercent, LocalDateTime.now());
+    }
+
+    public MetricHistory(String ticker, Double price, Double changePercent, LocalDateTime timestamp) {
         this.ticker = ticker;
         this.price = price;
         this.changePercent = changePercent;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp;
     }
 
     // Getters and Setters

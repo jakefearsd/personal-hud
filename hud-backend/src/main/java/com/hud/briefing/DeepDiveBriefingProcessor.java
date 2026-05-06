@@ -21,14 +21,17 @@ public class DeepDiveBriefingProcessor extends BriefingProcessor {
 
     @Override
     protected int getLinkLimit() { 
-        return (category == BriefingCategory.GLOBAL_SITREP) ? 6 : 4; 
+        return (category == BriefingCategory.GLOBAL_SITREP) ? 25 : 15; 
     }
 
     @Override
     protected int getMinRequiredChars() { return 2500; }
 
     @Override
-    protected String synthesize(String rawSignal) {
+    protected int getScrapeDepth() { return 1; }
+
+    @Override
+    protected SynthesisResult synthesize(String rawSignal) {
         if (category == BriefingCategory.GLOBAL_SITREP) {
             return synthesizer.synthesizeGlobalSitrep(chatModel, rawSignal);
         }

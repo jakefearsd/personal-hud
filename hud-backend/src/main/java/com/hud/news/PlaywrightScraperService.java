@@ -5,6 +5,12 @@ import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitUntilState;
 import net.dankito.readability4j.Article;
 import net.dankito.readability4j.Readability4J;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -12,7 +18,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +31,7 @@ import java.util.regex.Pattern;
 @Service
 public class PlaywrightScraperService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PlaywrightScraperService.class);
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36";
 
     @FunctionalInterface
@@ -41,7 +50,7 @@ public class PlaywrightScraperService {
             browser.close();
             return result;
         } catch (Exception e) {
-            System.err.println("[PLAYWRIGHT] Error in browser task: " + e.getMessage());
+            logger.error("[PLAYWRIGHT] Error in browser task", e);
             return null;
         }
     }
@@ -54,6 +63,10 @@ public class PlaywrightScraperService {
         return executeInBrowser(new IswScraperStrategy(limit)::scrape);
     }
 
+    public List<String> getCsisLinks(int limit) {
+        return executeInBrowser(new CsisScraperStrategy(limit)::scrape);
+    }
+
     public MacroMetric scrapeYahooMetric(String ticker, String label) {
         return executeInBrowser(new YahooMetricScraperStrategy(ticker, label)::scrape);
     }
@@ -63,36 +76,103 @@ public class PlaywrightScraperService {
     }
 
     public String extractFullText(String url) {
+        return extractFullText(url, 0);
+    }
+
+    public String extractFullText(String url, int depth) {
+        return extractFullTextInternal(url, depth, new HashSet<>());
+    }
+
+    private String extractFullTextInternal(String url, int depth, Set<String> visited) {
+        if (visited.contains(url) || visited.size() > 10) return "";
+        visited.add(url);
+
         String targetUrl = url.replace("&amp;", "&");
         
-        return executeInBrowser(page -> {
-            page.navigate(targetUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(45000));
-            handleConsent(page);
+        String content = executeInBrowser(page -> {
+            try {
+                page.navigate(targetUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(45000));
+                handleConsent(page);
 
-            if (page.url().contains("google.com/") || page.url().contains("yahoo.com/")) {
-                try { page.waitForURL(u -> !u.contains("google.com") && !u.contains("yahoo.com"), new Page.WaitForURLOptions().setTimeout(10000)); } catch (Exception e) {}
-            }
-
-            page.waitForTimeout(3000);
-            String html = page.content();
-            
-            Readability4J readability = new Readability4J(targetUrl, html);
-            Article article = readability.parse();
-            String content = article.getTextContent();
-            
-            if (content == null || content.trim().length() < 100) return "";
-
-            // Surgical Truncation
-            String cleaned = content.trim();
-            String[] markers = {"Endnotes", "Citations", "Technical Notes", "Authors:", "Related Publications", "Click here to see ISW"};
-            for (String marker : markers) {
-                int idx = cleaned.indexOf(marker);
-                if (idx > 1000) {
-                    cleaned = cleaned.substring(0, idx);
+                if (page.url().contains("google.com/") || page.url().contains("yahoo.com/")) {
+                    try { 
+                        page.waitForURL(u -> !u.contains("google.com") && !u.contains("yahoo.com"), new Page.WaitForURLOptions().setTimeout(10000)); 
+                    } catch (Exception e) {
+                        logger.debug("[PLAYWRIGHT] Timeout waiting for redirect from {}", page.url());
+                    }
                 }
+
+                page.waitForTimeout(2000);
+                String html = page.content();
+                
+                Readability4J readability = new Readability4J(targetUrl, html);
+                Article article = readability.parse();
+                String text = article.getTextContent();
+                String htmlContent = article.getContent();
+                
+                if (text == null || text.trim().length() < 100) {
+                    logger.warn("[PLAYWRIGHT] Insufficient content extracted from {}", targetUrl);
+                    return "";
+                }
+
+                // Surgical Truncation
+                String cleaned = text.trim();
+                String[] markers = {"Endnotes", "Citations", "Technical Notes", "Authors:", "Related Publications", "Click here to see ISW"};
+                for (String marker : markers) {
+                    int idx = cleaned.indexOf(marker);
+                    if (idx > 1000) {
+                        cleaned = cleaned.substring(0, idx);
+                    }
+                }
+                
+                StringBuilder sb = new StringBuilder(cleaned);
+                
+                // Deep Crawl Logic
+                if (depth > 0 && htmlContent != null) {
+                    Document doc = Jsoup.parse(htmlContent, targetUrl);
+                    Elements links = doc.select("a[href]");
+                    int crawledCount = 0;
+                    URI baseUri = URI.create(targetUrl);
+
+                    for (Element link : links) {
+                        if (crawledCount >= 3) break;
+                        
+                        String href = link.attr("abs:href");
+                        if (isValidForDeepCrawl(href, baseUri.getHost())) {
+                            logger.info("[CRAWL] Deep diving into: {}", href);
+                            String deepText = extractFullTextInternal(href, depth - 1, visited);
+                            if (deepText != null && deepText.length() > 500) {
+                                sb.append("\n\n--- RELATED INTEL: ").append(href).append(" ---\n").append(deepText);
+                                crawledCount++;
+                            }
+                        }
+                    }
+                }
+
+                return sb.toString();
+            } catch (Exception e) {
+                logger.error("[PLAYWRIGHT] Failed to scrape {}: {}", targetUrl, e.getMessage(), e);
+                return "";
             }
-            return cleaned.length() > 1000000 ? cleaned.substring(0, 1000000) : cleaned.trim();
         });
+
+        return content != null ? (content.length() > 2000000 ? content.substring(0, 2000000) : content.trim()) : "";
+    }
+
+    private boolean isValidForDeepCrawl(String href, String originalHost) {
+        if (href == null || href.isBlank() || href.contains("#")) return false;
+        try {
+            URI uri = URI.create(href);
+            String host = uri.getHost();
+            if (host == null || !host.equals(originalHost)) return false;
+            
+            String path = uri.getPath().toLowerCase();
+            return !path.contains("/about") && !path.contains("/contact") && 
+                   !path.contains("/terms") && !path.contains("/privacy") && 
+                   !path.contains("/search") && !path.endsWith(".pdf");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public List<String> getLinksFromRss(String rssUrl, int limit) {
@@ -113,7 +193,7 @@ public class PlaywrightScraperService {
             }
             return links;
         } catch (Exception e) {
-            System.err.println("[RSS] Failed: " + e.getMessage());
+            logger.error("[RSS] Failed to fetch links from {}: {}", rssUrl, e.getMessage(), e);
             return List.of();
         }
     }
@@ -129,6 +209,8 @@ public class PlaywrightScraperService {
                     break;
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            logger.debug("[PLAYWRIGHT] Could not handle consent dialog for {}: {}", page.url(), e.getMessage());
+        }
     }
 }
