@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +17,8 @@ import java.util.stream.Collectors;
 public class EventCorrelationService {
 
     private static final Logger logger = LoggerFactory.getLogger(EventCorrelationService.class);
+    private static final double SIGNIFICANT_MOVE_THRESHOLD = 2.0;
+
     private final MacroMetricsService metricsService;
     private final DailyBriefingRepository briefingRepository;
     private final MarketEventRepository eventRepository;
@@ -58,8 +59,8 @@ public class EventCorrelationService {
         ChatLanguageModel model = models.get(0).model();
 
         for (MacroMetric metric : metrics) {
-            // Check for significant movement (> 2%)
-            if (Math.abs(metric.getChangePercent()) >= 2.0) {
+            // Check for significant movement
+            if (Math.abs(metric.getChangePercent()) >= SIGNIFICANT_MOVE_THRESHOLD) {
                 analyzeMove(metric, combinedIntel, model);
             }
         }

@@ -8,7 +8,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableAsync
-public class HudBackendApplication {
+public final class HudBackendApplication {
+
+	private HudBackendApplication() {
+		// Utility class
+	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(HudBackendApplication.class, args);

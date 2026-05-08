@@ -4,6 +4,7 @@ import com.hud.news.PlaywrightScraperService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Base class for processing briefings using the GoF Template Method pattern.
@@ -33,13 +34,13 @@ public abstract class BriefingProcessor {
         List<String> links = sourceStrategy.getLinks(query, getLinkLimit());
         
         if (links.isEmpty()) {
-            throw new RuntimeException("No signal sources found for: " + query);
+            throw new IllegalStateException("No signal sources found for: " + query);
         }
 
         String consolidatedSignal = acquireSignal(links);
         
         if (consolidatedSignal.length() < getMinRequiredChars()) {
-            throw new RuntimeException("Insufficient situational signal captured.");
+            throw new IllegalStateException("Insufficient situational signal captured.");
         }
 
         return synthesize(consolidatedSignal);
@@ -63,7 +64,7 @@ public abstract class BriefingProcessor {
 
     private boolean isPlausibleContent(String text, String url) {
         if (text == null || text.length() < 500) return false;
-        String lower = text.toLowerCase();
+        String lower = text.toLowerCase(Locale.ROOT);
         // Filter out common cookie walls and non-narrative pages
         return !lower.contains("before you continue") && !lower.contains("accept all cookies") && !url.contains("/about");
     }

@@ -1,0 +1,21 @@
+<FindBugsFilter>
+    <!-- Ignore Representation Exposure for DTOs and internal services where immutability is not strictly required -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- Ignore generic exception catching in scrapers and high-level orchestrators where we want robust failure isolation -->
+    <Match>
+        <Class name="com.hud.news.YahooMetricScraperStrategy"/>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+    </Match>
+    <Match>
+        <Class name="com.hud.briefing.AutomatedBriefingService"/>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+    </Match>
+
+    <!-- Ignore newline issues in large format strings (LLM Prompts) -->
+    <Match>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+</FindBugsFilter>

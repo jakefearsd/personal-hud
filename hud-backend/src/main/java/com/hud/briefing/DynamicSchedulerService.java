@@ -1,8 +1,6 @@
 package com.hud.briefing;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
@@ -10,9 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -26,7 +23,7 @@ public class DynamicSchedulerService {
     private final AutomatedBriefingService briefingService;
     private final TaskScheduler taskScheduler;
 
-    private final Map<BriefingCategory, ScheduledFuture<?>> scheduledTasks = new HashMap<>();
+    private final Map<BriefingCategory, ScheduledFuture<?>> scheduledTasks = new EnumMap<>(BriefingCategory.class);
 
     public DynamicSchedulerService(BriefingScheduleRepository repository, 
                                    AutomatedBriefingService briefingService,

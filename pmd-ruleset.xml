@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<ruleset name="Custom HUD Ruleset"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.github.io/schema/report_2_0_0.xsd">
+
+    <description>
+        Custom ruleset for HUD project to reduce false positives and noise.
+    </description>
+
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="GuardLogStatement"/>
+    </rule>
+    <rule ref="category/java/errorprone.xml"/>
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter"/>
+        <exclude name="DataClass"/>
+        <exclude name="AvoidCatchingGenericException"/>
+        <exclude name="LoosePackageCoupling"/>
+        <exclude name="SignatureDeclareThrowsException"/>
+    </rule>
+
+</ruleset>

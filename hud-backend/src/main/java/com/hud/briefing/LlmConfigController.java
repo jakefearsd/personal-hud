@@ -7,6 +7,7 @@ import java.util.List;
 @RequestMapping("/api/config/brains")
 public class LlmConfigController {
 
+    private static final int MASK_THRESHOLD = 8;
     private final LlmConfigRepository repository;
     private final AutomatedBriefingService briefingService;
 
@@ -21,7 +22,7 @@ public class LlmConfigController {
         configs.forEach(c -> {
             if (c.getApiKey() != null && !c.getApiKey().isBlank()) {
                 String key = c.getApiKey();
-                if (key.length() > 8) {
+                if (key.length() > MASK_THRESHOLD) {
                     c.setApiKey(key.substring(0, 4) + "..." + key.substring(key.length() - 4));
                 } else {
                     c.setApiKey("********");

@@ -8,8 +8,6 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.AttributeProvider;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +17,8 @@ import java.util.Map;
 
 @Service
 public class MarkdownService {
+
+    private static final String CLASS_ATTR = "class";
 
     private final Parser parser;
     private final HtmlRenderer renderer;
@@ -55,13 +55,10 @@ public class MarkdownService {
 
         // Sanitize to prevent XSS while allowing tactical elements
         // Safelist.relaxed() allows tables, lists, links, etc.
-        String sanitizedHtml = Jsoup.clean(rawHtml, Safelist.relaxed()
-                .addAttributes("a", "target", "rel", "class")
-                .addAttributes("table", "class")
+        return Jsoup.clean(rawHtml, Safelist.relaxed()
+                .addAttributes("a", "target", "rel", CLASS_ATTR)
+                .addAttributes("table", CLASS_ATTR)
                 .addTags("del"));
-
-        // Post-process with Jsoup for any specific tactical decoration if needed
-        return sanitizedHtml;
     }
 
     /**
@@ -77,8 +74,8 @@ public class MarkdownService {
         StringBuilder sb = new StringBuilder();
         boolean inTable = false;
 
-        for (int i = 0; i < lines.length; i++) {
-            String currentLine = lines[i];
+        for (String line : lines) {
+            String currentLine = line;
             String trimmedLine = currentLine.trim();
             
             // Detect squashed header/separator: "| a | b | | :--- | :--- |"
@@ -93,8 +90,6 @@ public class MarkdownService {
                     sb.append("\n");
                 }
                 inTable = true;
-            } else if (!trimmedLine.isEmpty()) {
-                inTable = false;
             } else {
                 inTable = false;
             }
@@ -108,16 +103,19 @@ public class MarkdownService {
     /**
      * Injects standard tactical attributes into HTML elements.
      */
-    private static class TacticalAttributeProvider implements AttributeProvider {
+    private static final class TacticalAttributeProvider implements AttributeProvider {
+        private static final String TAG_A = "a";
+        private static final String TAG_TABLE = "table";
+
         @Override
         public void setAttributes(Node node, String tagName, Map<String, String> attributes) {
-            if (tagName.equals("a")) {
+            if (TAG_A.equals(tagName)) {
                 attributes.put("target", "_blank");
                 attributes.put("rel", "noopener noreferrer");
-                attributes.put("class", "tactical-link");
+                attributes.put(CLASS_ATTR, "tactical-link");
             }
-            if (tagName.equals("table")) {
-                attributes.put("class", "tactical-table");
+            if (TAG_TABLE.equals(tagName)) {
+                attributes.put(CLASS_ATTR, "tactical-table");
             }
         }
     }

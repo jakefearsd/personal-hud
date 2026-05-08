@@ -13,6 +13,10 @@ import java.util.stream.Collectors;
 public class TheaterSourceStrategy implements BriefingSourceStrategy {
 
     private static final Logger logger = LoggerFactory.getLogger(TheaterSourceStrategy.class);
+    private static final int ISW_LINK_FETCH_LIMIT = 15;
+    private static final int PREFIX_LENGTH = 4;
+    private static final int CSIS_PREFIX_LENGTH = 5;
+
     private final PlaywrightScraperService scraperService;
 
     public TheaterSourceStrategy(PlaywrightScraperService scraperService) {
@@ -37,7 +41,7 @@ public class TheaterSourceStrategy implements BriefingSourceStrategy {
                 aggregatedLinks.addAll(scraperService.getLinksFromRss(trimmed, limitPerSource));
             } else if (trimmed.startsWith("isw-")) {
                 // ISW specific parsing
-                String iswQuery = trimmed.substring(4);
+                String iswQuery = trimmed.substring(PREFIX_LENGTH);
                 logger.info("TheaterSourceStrategy: Fetching ISW for: {}", iswQuery);
                 aggregatedLinks.addAll(getIswLinks(iswQuery, limitPerSource));
             } else if (trimmed.startsWith("csis-")) {
@@ -51,7 +55,7 @@ public class TheaterSourceStrategy implements BriefingSourceStrategy {
     }
 
     private List<String> getIswLinks(String iswQuery, int limit) {
-        List<String> links = scraperService.getIswLinks(15);
+        List<String> links = scraperService.getIswLinks(ISW_LINK_FETCH_LIMIT);
         List<String> filtered;
         
         if ("ukraine".equalsIgnoreCase(iswQuery)) {

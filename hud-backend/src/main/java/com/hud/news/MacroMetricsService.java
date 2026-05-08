@@ -1,11 +1,11 @@
 package com.hud.news;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.Map;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -14,18 +14,21 @@ import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class MacroMetricsService {
 
     private static final Logger logger = LoggerFactory.getLogger(MacroMetricsService.class);
+    private static final int RECENT_GAP_THRESHOLD_DAYS = 7;
+    private static final long SECONDS_IN_DAY = 86400;
+
     private final PlaywrightScraperService scraperService;
     private final MacroMetricRepository repository;
     private final MetricHistoryRepository historyRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient;
 
     public MacroMetricsService(PlaywrightScraperService scraperService, 
                                MacroMetricRepository repository,
@@ -33,6 +36,7 @@ public class MacroMetricsService {
         this.scraperService = scraperService;
         this.repository = repository;
         this.historyRepository = historyRepository;
+        this.httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
     }
 
     @Scheduled(fixedRate = 3600000) // Run every hour
@@ -107,8 +111,8 @@ public class MacroMetricsService {
                         .map(MetricHistory::getTimestamp)
                         .orElse(LocalDateTime.now().minusYears(30));
                 
-                long start = lastPoint.atZone(ZoneId.systemDefault()).toEpochSecond() + 86400; // Start day after
-                if (start >= now - 86400 * 7) continue; // Less than a week of gap
+                long start = lastPoint.atZone(ZoneId.systemDefault()).toEpochSecond() + SECONDS_IN_DAY; // Start day after
+                if (start >= now - SECONDS_IN_DAY * RECENT_GAP_THRESHOLD_DAYS) continue; // Less than a week of gap
 
                 logger.info("Syncing historical gaps for {} from {} to now", symbol, lastPoint);
                 fetchAndStoreYahooHistory(symbol, start, now);
@@ -121,20 +125,22 @@ public class MacroMetricsService {
 
     private void fetchAndStoreYahooHistory(String symbol, long start, long end) throws Exception {
         String url = String.format("https://query1.finance.yahoo.com/v8/finance/chart/%s?period1=%d&period2=%d&interval=1wk", symbol, start, end);
-        HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         JsonNode root = objectMapper.readTree(response.body());
-        JsonNode result = root.path("chart").path("result").get(0);
+        JsonNode resultNode = root.path("chart").path("result").get(0);
         
-        if (result == null) return;
+        if (resultNode.isMissingNode() || resultNode.isNull()) return;
 
-        JsonNode timestamps = result.path("timestamp");
-        JsonNode closes = result.path("indicators").path("quote").get(0).path("close");
+        JsonNode timestamps = resultNode.path("timestamp");
+        JsonNode indicatorNode = resultNode.path("indicators").path("quote").get(0);
+        if (indicatorNode.isMissingNode()) return;
+        
+        JsonNode closes = indicatorNode.path("close");
 
         if (timestamps.isMissingNode() || closes.isMissingNode()) return;
 
@@ -151,6 +157,7 @@ public class MacroMetricsService {
                 historyRepository.save(new MetricHistory(symbol, close, 0.0, dt));
             } catch (Exception e) {
                 // Ignore duplicates due to unique constraint
+                logger.trace("Skipping duplicate history point for {}: {}", symbol, dt);
             }
         }
     }

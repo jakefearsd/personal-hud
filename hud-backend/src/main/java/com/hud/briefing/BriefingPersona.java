@@ -1,10 +1,14 @@
 package com.hud.briefing;
 
+import java.io.Serializable;
+
 /**
  * Encapsulates the configuration for a category-specific briefing.
  */
-public record BriefingPersona(String name, String role, String focus, String instruction) {
+public record BriefingPersona(String name, String role, String focus, String instruction) implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+
     public static final BriefingPersona WORLD_NEWS = new BriefingPersona(
         "Geopolitical Strategist",
         "Senior Intelligence Officer for Global Affairs",

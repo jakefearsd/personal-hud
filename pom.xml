@@ -25,8 +25,8 @@
         
         <!-- Quality Tool Versions -->
         <jacoco.version>0.8.12</jacoco.version>
-        <pmd.version>3.21.2</pmd.version>
-        <spotbugs.version>4.8.4.0</spotbugs.version>
+        <pmd.version>3.26.0</pmd.version>
+        <spotbugs.version>4.8.6.6</spotbugs.version>
     </properties>
 
     <dependencyManagement>
@@ -88,11 +88,11 @@
                     <artifactId>maven-pmd-plugin</artifactId>
                     <version>${pmd.version}</version>
                     <configuration>
+                        <targetJdk>${java.version}</targetJdk>
                         <failOnViolation>false</failOnViolation>
                         <printFailingErrors>true</printFailingErrors>
                         <rulesets>
-                            <ruleset>/category/java/bestpractices.xml</ruleset>
-                            <ruleset>/category/java/errorprone.xml</ruleset>
+                            <ruleset>${project.basedir}/../pmd-ruleset.xml</ruleset>
                         </rulesets>
                     </configuration>
                 </plugin>
@@ -102,9 +102,10 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${spotbugs.version}</version>
                     <configuration>
-                        <effort>Default</effort>
-                        <threshold>High</threshold>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
                         <failOnError>false</failOnError>
+                        <excludeFilterFile>${project.basedir}/../spotbugs-exclude.xml</excludeFilterFile>
                     </configuration>
                 </plugin>
             </plugins>

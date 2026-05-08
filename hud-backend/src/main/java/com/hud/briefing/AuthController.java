@@ -1,18 +1,11 @@
 package com.hud.briefing;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,16 +45,16 @@ public class AuthController {
     @PutMapping("/password")
     public Map<String, String> changePassword(@RequestBody Map<String, String> request, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("Unauthorized");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
 
         String newPassword = request.get("newPassword");
         if (newPassword == null || newPassword.length() < 4) {
-            throw new IllegalArgumentException("Password too short");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password too short");
         }
 
         AppUser user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
