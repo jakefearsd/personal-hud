@@ -3,6 +3,7 @@ import type { MacroMetric } from './types';
 import { TrendingUp, TrendingDown, RefreshCcw, Landmark, Fuel, Shield, AlertTriangle, BarChart2 } from 'lucide-react';
 import { MetricChart } from './MetricChart';
 import { ComparisonDashboard } from './ComparisonDashboard';
+import { MarketPredictionDashboard } from './MarketPredictionDashboard';
 
 export const InvestmentsView = () => {
   const [metrics, setMetrics] = useState<MacroMetric[]>([]);
@@ -99,6 +100,8 @@ export const InvestmentsView = () => {
       </div>
 
       <ComparisonDashboard metrics={metrics} />
+
+      <MarketPredictionDashboard />
 
       {selectedMetric && (
         <MetricChart 

@@ -57,28 +57,48 @@ body {
   gap: 0.5rem;
 }
 
-.main-tabs button {
+.main-tabs a, .sub-tabs a {
+  text-decoration: none;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.main-tabs a {
   font-size: 1rem;
   padding: 0.5rem 1.5rem;
   border-bottom: 2px solid transparent;
-  border-radius: 0;
 }
 
-.main-tabs button.active {
-  background-color: transparent;
-  border-bottom: 2px solid var(--accent-color);
+.main-tabs a.active {
   color: var(--accent-color);
+  border-bottom: 2px solid var(--accent-color);
 }
 
-.sub-tabs button {
+.main-tabs a:hover:not(.active) {
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.sub-tabs a {
   font-size: 0.85rem;
   background-color: #21262d;
   border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
 }
 
-.sub-tabs button.active {
+.sub-tabs a.active {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
+  color: white;
+}
+
+.sub-tabs a:hover:not(.active) {
+  background-color: #30363d;
 }
 
 /* Model Switcher */

@@ -10,13 +10,16 @@ public class MacroMetricsController {
     private final MacroMetricsService service;
     private final MarketEventRepository eventRepository;
     private final EventCorrelationService correlationService;
+    private final PredictionService predictionService;
 
     public MacroMetricsController(MacroMetricsService service, 
                                   MarketEventRepository eventRepository,
-                                  EventCorrelationService correlationService) {
+                                  EventCorrelationService correlationService,
+                                  PredictionService predictionService) {
         this.service = service;
         this.eventRepository = eventRepository;
         this.correlationService = correlationService;
+        this.predictionService = predictionService;
     }
 
     @GetMapping("/vitals")
@@ -50,5 +53,21 @@ public class MacroMetricsController {
     public String triggerSync() {
         service.syncHistoricalGaps();
         return "Historical data sync triggered.";
+    }
+
+    @GetMapping("/predictions/latest")
+    public List<MarketPrediction> getLatestPredictions() {
+        return predictionService.getLatestPredictions();
+    }
+
+    @GetMapping("/predictions/history/{ticker}")
+    public List<MarketPrediction> getPredictionHistory(@PathVariable String ticker) {
+        return predictionService.getHistory(ticker);
+    }
+
+    @PostMapping("/predictions/trigger")
+    public String triggerPredictions() {
+        predictionService.generateDailyPredictions();
+        return "Market predictions triggered.";
     }
 }

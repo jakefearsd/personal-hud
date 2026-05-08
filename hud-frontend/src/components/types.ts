@@ -66,3 +66,15 @@ export interface MarketEvent {
   title: string;
   rationale: string;
 }
+
+export interface MarketPrediction {
+  id: number;
+  ticker: string;
+  generationDate: string;
+  targetDate: string;
+  predictedPrice: number;
+  actualPrice: number | null;
+  rationale: string;
+  synthesis: string;
+  modelName: string;
+}

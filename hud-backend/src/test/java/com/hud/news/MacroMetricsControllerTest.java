@@ -18,13 +18,15 @@ class MacroMetricsControllerTest {
     private MarketEventRepository eventRepository;
     @Mock
     private EventCorrelationService correlationService;
+    @Mock
+    private PredictionService predictionService;
 
     private MacroMetricsController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new MacroMetricsController(service, eventRepository, correlationService);
+        controller = new MacroMetricsController(service, eventRepository, correlationService, predictionService);
     }
 
     @Test

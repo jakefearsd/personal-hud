@@ -1,15 +1,23 @@
 package com.hud.news;
 
-import com.microsoft.playwright.Locator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.playwright.Page;
-import com.microsoft.playwright.options.WaitUntilState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 
 public class YahooMetricScraperStrategy implements ScraperStrategy<MacroMetric> {
     private static final Logger logger = LoggerFactory.getLogger(YahooMetricScraperStrategy.class);
     private final String ticker;
     private final String label;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public YahooMetricScraperStrategy(String ticker, String label) {
         this.ticker = ticker;
@@ -18,51 +26,71 @@ public class YahooMetricScraperStrategy implements ScraperStrategy<MacroMetric> 
 
     @Override
     public String getUrl() {
-        return "https://finance.yahoo.com/quote/" + ticker;
+        String encodedTicker = URLEncoder.encode(ticker, StandardCharsets.UTF_8);
+        return "https://query1.finance.yahoo.com/v8/finance/chart/" + encodedTicker + "?interval=1d&range=1d";
     }
 
     @Override
     public MacroMetric scrape(Page page) {
+        // PREFERRED: Yahoo Chart JSON API
         try {
-            page.navigate(getUrl(), new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(30000));
-            
-            // High-resolution stabilization wait
-            page.waitForTimeout(5000);
-            
-            // Primary strategy: Strictly symbol-locked selectors
-            Locator priceLocator = page.locator("fin-streamer[data-symbol='" + ticker + "'][data-field='regularMarketPrice']").first();
-            Locator changeLocator = page.locator("fin-streamer[data-symbol='" + ticker + "'][data-field='regularMarketChange']").first();
-            Locator pctLocator = page.locator("fin-streamer[data-symbol='" + ticker + "'][data-field='regularMarketChangePercent']").first();
+            HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(getUrl()))
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+                    .build();
 
-            // Fallback strategy: Broad selectors for major indices/commodities
-            if (priceLocator.count() == 0) {
-                logger.debug("[MARKET] Symbol-locked locator failed for {}, trying fallback...", ticker);
-                priceLocator = page.locator("fin-streamer[data-field='regularMarketPrice']").first();
-                changeLocator = page.locator("fin-streamer[data-field='regularMarketChange']").first();
-                pctLocator = page.locator("fin-streamer[data-field='regularMarketChangePercent']").first();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                JsonNode root = mapper.readTree(response.body());
+                JsonNode resultNode = root.path("chart").path("result").get(0);
+                if (resultNode != null) {
+                    JsonNode meta = resultNode.path("meta");
+                    double price = meta.path("regularMarketPrice").asDouble();
+                    double prevClose = meta.path("previousClose").asDouble();
+                    
+                    if (price != 0) {
+                        double change = price - prevClose;
+                        double pct = (prevClose != 0) ? (change / prevClose * 100) : 0.0;
+                        logger.info("[MARKET] API Success for {}: {}", ticker, price);
+                        return new MacroMetric(ticker, label, price, change, pct);
+                    }
+                }
+            } else {
+                logger.warn("[MARKET] API failed for {} with status {}", ticker, response.statusCode());
             }
-
-            if (priceLocator.count() == 0) {
-                throw new RuntimeException("Ticker data not found on page using primary or fallback selectors.");
-            }
-
-            String priceStr = priceLocator.innerText().trim();
-            String changeStr = changeLocator.innerText().trim();
-            String pctStr = pctLocator.innerText().trim();
-            
-            double price = parseValue(priceStr);
-            double change = parseValue(changeStr);
-            double pct = parseValue(pctStr.replace("(", "").replace(")", "").replace("%", ""));
-            
-            return new MacroMetric(ticker, label, price, change, pct);
         } catch (Exception e) {
-            logger.error("[MARKET] Failed to scrape {} from {}: {}", ticker, getUrl(), e.getMessage(), e);
-            return null;
+            logger.warn("[MARKET] API exception for {}: {}", ticker, e.getMessage());
         }
-    }
 
-    private double parseValue(String val) {
-        if (val == null || val.isBlank() || val.equals("--")) return 0.0;
-        return Double.parseDouble(val.replace(",", "").replace("+", ""));
+        // FALLBACK: Playwright (Enhanced DOM Selectors)
+        try {
+            logger.info("[MARKET] Falling back to Playwright for {}...", ticker);
+            page.navigate("https://finance.yahoo.com/quote/" + ticker);
+            page.waitForTimeout(7000);
+            
+            // Priority list of selectors for the main price
+            String[] selectors = {
+                "[data-field='regularMarketPrice']", 
+                "[data-testid='quote-price']",
+                ".livePrice span",
+                "fin-streamer[data-symbol='" + ticker + "']"
+            };
+
+            for (String selector : selectors) {
+                var loc = page.locator(selector).first();
+                if (loc.count() > 0 && !loc.innerText().isBlank()) {
+                    String priceStr = loc.innerText().replaceAll("[^0-9.\\-]", "");
+                    if (!priceStr.isEmpty()) {
+                        double price = Double.parseDouble(priceStr);
+                        logger.info("[MARKET] Playwright Success for {} using {}: {}", ticker, selector, price);
+                        return new MacroMetric(ticker, label, price, 0.0, 0.0);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("[MARKET] Total scraper failure for {}: {}", ticker, e.getMessage());
+        }
+        return null;
     }
 }

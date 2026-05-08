@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
 import { BriefingView } from './components/BriefingView'
 import { ObservabilityView } from './components/ObservabilityView'
 import { ConfigView } from './components/ConfigView'
@@ -13,12 +14,8 @@ interface NewsArticle {
   url: string;
 }
 
-type MainTab = 'news' | 'theaters' | 'investments' | 'config' | 'observability';
-type NewsTab = 'briefing' | 'live';
-
 function App() {
-  const [activeMainTab, setActiveMainTab] = useState<MainTab>('theaters')
-  const [activeNewsTab, setActiveNewsTab] = useState<NewsTab>('briefing')
+  const location = useLocation()
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [briefingCache, setBriefingCache] = useState<Record<string, DailyBriefing[]>>({})
   const [configs, setConfigs] = useState<LlmConfig[]>([])
@@ -101,13 +98,14 @@ function App() {
   }, [fetchAuthStatus, fetchConfigs])
 
   useEffect(() => {
-    if (activeMainTab === 'news' || activeMainTab === 'theaters') {
+    const path = location.pathname
+    if (path.startsWith('/news') || path === '/theaters') {
       fetchLatestBriefings(selectedModel)
-      if (activeMainTab === 'news' && activeNewsTab === 'live') {
+      if (path === '/news/live') {
         fetchLiveNews()
       }
     }
-  }, [activeMainTab, activeNewsTab, selectedModel, fetchLatestBriefings, fetchLiveNews])
+  }, [location.pathname, selectedModel, fetchLatestBriefings, fetchLiveNews])
 
   const triggerBriefing = () => {
     if (!isAdmin) return;
@@ -133,19 +131,15 @@ function App() {
         setIsAuthenticated(false)
         setIsAdmin(false)
         setUsername('')
-        if (activeMainTab === 'config' || activeMainTab === 'observability') {
-          setActiveMainTab('theaters')
-        }
       })
   }
 
-  // Improved selection logic: 
-  // 1. Try selected model specific briefings.
-  // 2. If selected model has NO briefings (empty array), but global DOES, use global.
-  // 3. This prevents the "flash and disappear" when a model-specific run hasn't happened yet.
   const modelBriefings = briefingCache[selectedModel];
   const globalBriefings = briefingCache['global'] || [];
   const briefings = (modelBriefings && modelBriefings.length > 0) ? modelBriefings : globalBriefings;
+
+  const showSubTabs = location.pathname.startsWith('/news');
+  const showModelSwitcher = (location.pathname.startsWith('/news') || location.pathname === '/theaters') && configs.length > 0;
 
   return (
     <div className="app-container">
@@ -153,20 +147,20 @@ function App() {
         <div className="header-left">
           <h1>HUD</h1>
           <nav className="main-tabs">
-            <button className={activeMainTab === 'news' ? 'active' : ''} onClick={() => setActiveMainTab('news')}>News</button>
-            <button className={activeMainTab === 'theaters' ? 'active' : ''} onClick={() => setActiveMainTab('theaters')}>Theaters</button>
-            <button className={activeMainTab === 'investments' ? 'active' : ''} onClick={() => setActiveMainTab('investments')}>Investments</button>
+            <NavLink to="/news">News</NavLink>
+            <NavLink to="/theaters">Theaters</NavLink>
+            <NavLink to="/investments">Investments</NavLink>
             {isAdmin && (
               <>
-                <button className={activeMainTab === 'config' ? 'active' : ''} onClick={() => setActiveMainTab('config')}>Config</button>
-                <button className={activeMainTab === 'observability' ? 'active' : ''} onClick={() => setActiveMainTab('observability')}>Observability</button>
+                <NavLink to="/config">Config</NavLink>
+                <NavLink to="/observability">Observability</NavLink>
               </>
             )}
           </nav>
         </div>
         
         <div className="header-right">
-          {(activeMainTab === 'news' || activeMainTab === 'theaters') && configs.length > 0 && (
+          {showModelSwitcher && (
             <div className="model-switcher">
               <label>Brain:</label>
               <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
@@ -191,10 +185,10 @@ function App() {
             )}
           </div>
 
-          {activeMainTab === 'news' && (
+          {showSubTabs && (
             <nav className="sub-tabs">
-              <button className={activeNewsTab === 'briefing' ? 'active' : ''} onClick={() => setActiveNewsTab('briefing')}>Briefing</button>
-              <button className={activeNewsTab === 'live' ? 'active' : ''} onClick={() => setActiveNewsTab('live')}>Live</button>
+              <NavLink to="/news/briefing">Briefing</NavLink>
+              <NavLink to="/news/live">Live</NavLink>
             </nav>
           )}
         </div>
@@ -204,44 +198,48 @@ function App() {
         {error && <div className="error-banner">Error: {error}</div>}
         
         <div className={`content-wrapper ${loading ? 'is-loading' : ''}`}>
-          {activeMainTab === 'news' && (
-            <>
-              {activeNewsTab === 'briefing' ? (
-                <BriefingView 
-                  briefings={briefings} 
-                  type="general"
-                  loading={loading} 
-                  onTrigger={isAdmin ? triggerBriefing : undefined} 
-                />
-              ) : (
-                <div className="live-feed">
-                  <h2>Latest Headlines</h2>
-                  <ul className="news-list">
-                    {articles.map((article, index) => (
-                      <li key={index} className="news-item">
-                        <a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
+          <Routes>
+            <Route path="/" element={<Navigate to="/theaters" replace />} />
+            
+            <Route path="/news" element={<Navigate to="/news/briefing" replace />} />
+            <Route path="/news/briefing" element={
+              <BriefingView 
+                briefings={briefings} 
+                type="general"
+                loading={loading} 
+                onTrigger={isAdmin ? triggerBriefing : undefined} 
+              />
+            } />
+            <Route path="/news/live" element={
+              <div className="live-feed">
+                <h2>Latest Headlines</h2>
+                <ul className="news-list">
+                  {articles.map((article, index) => (
+                    <li key={index} className="news-item">
+                      <a href={article.url} target="_blank" rel="noopener noreferrer">{article.title}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            } />
 
-          {activeMainTab === 'theaters' && (
-             <BriefingView 
-               briefings={briefings} 
-               type="theater"
-               loading={loading} 
-               onTrigger={isAdmin ? triggerBriefing : undefined} 
-             />
-          )}
+            <Route path="/theaters" element={
+              <BriefingView 
+                briefings={briefings} 
+                type="theater"
+                loading={loading} 
+                onTrigger={isAdmin ? triggerBriefing : undefined} 
+              />
+            } />
 
-          {activeMainTab === 'investments' && <InvestmentsView />}
+            <Route path="/investments" element={<InvestmentsView />} />
 
-          {activeMainTab === 'config' && isAdmin && <ConfigView />}
+            <Route path="/config" element={isAdmin ? <ConfigView /> : <Navigate to="/theaters" replace />} />
+            
+            <Route path="/observability" element={isAdmin ? <ObservabilityView /> : <Navigate to="/theaters" replace />} />
 
-          {activeMainTab === 'observability' && isAdmin && <ObservabilityView />}
+            <Route path="*" element={<Navigate to="/theaters" replace />} />
+          </Routes>
         </div>
 
         {loading && <div className="global-loader-overlay">Fusing intelligence...</div>}

@@ -63,7 +63,16 @@ public class MacroMetricsService {
             try {
                 MacroMetric metric = scraperService.scrapeYahooMetric(entry.getKey(), entry.getValue());
                 if (metric != null) {
-                    repository.save(metric);
+                    // Update existing or save new
+                    MacroMetric existing = repository.findById(entry.getKey())
+                            .orElse(new MacroMetric(entry.getKey(), entry.getValue(), 0.0, 0.0, 0.0));
+                    
+                    existing.setPrice(metric.getPrice());
+                    existing.setChange(metric.getChange());
+                    existing.setChangePercent(metric.getChangePercent());
+                    existing.setUpdatedAt(LocalDateTime.now());
+                    repository.save(existing);
+
                     historyRepository.save(new MetricHistory(metric.getTicker(), metric.getPrice(), metric.getChangePercent()));
                 }
             } catch (Exception e) {
