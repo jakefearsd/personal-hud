@@ -12,10 +12,8 @@ import static org.mockito.Mockito.*;
 
 class BriefingSourceFactoryTest {
 
-    @Mock
-    private BriefingSourceStrategy strategy1;
-    @Mock
-    private BriefingSourceStrategy strategy2;
+    @Mock private BriefingSourceStrategy strategy1;
+    @Mock private BriefingSourceStrategy strategy2;
 
     private BriefingSourceFactory factory;
 
@@ -26,19 +24,19 @@ class BriefingSourceFactoryTest {
     }
 
     @Test
-    void testGetStrategySuccess() {
-        when(strategy1.supports(BriefingCategory.WORLD_NEWS)).thenReturn(true);
-        
-        BriefingSourceStrategy result = factory.getStrategy(BriefingCategory.WORLD_NEWS);
-        
+    void shouldReturnCorrectStrategy() {
+        when(strategy1.supports(BriefingCategory.FINANCE)).thenReturn(true);
+        when(strategy2.supports(BriefingCategory.FINANCE)).thenReturn(false);
+
+        BriefingSourceStrategy result = factory.getStrategy(BriefingCategory.FINANCE);
         assertEquals(strategy1, result);
     }
 
     @Test
-    void testGetStrategyFailure() {
+    void shouldThrowExceptionWhenNoStrategyFound() {
         when(strategy1.supports(any())).thenReturn(false);
         when(strategy2.supports(any())).thenReturn(false);
-        
+
         assertThrows(IllegalArgumentException.class, () -> factory.getStrategy(BriefingCategory.WORLD_NEWS));
     }
 }

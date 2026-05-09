@@ -138,7 +138,7 @@ public class PlaywrightScraperService {
         }
     }
 
-    private String cleanExtractedText(String text) {
+    String cleanExtractedText(String text) {
         String cleaned = text.trim();
         String[] markers = {"Endnotes", "Citations", "Technical Notes", "Authors:", "Related Publications", "Click here to see ISW"};
         for (String marker : markers) {
@@ -173,11 +173,11 @@ public class PlaywrightScraperService {
         }
     }
 
-    private String truncateContent(String content) {
+    String truncateContent(String content) {
         return content.length() > 2000000 ? content.substring(0, 2000000) : content.trim();
     }
 
-    private boolean isValidForDeepCrawl(String href, String originalHost) {
+    boolean isValidForDeepCrawl(String href, String originalHost) {
         if (href == null || href.isBlank() || href.contains("#")) return false;
         try {
             URI uri = URI.create(href);

@@ -30,6 +30,7 @@ public class MacroMetricsService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public MacroMetricsService(PlaywrightScraperService scraperService, 
                                MacroMetricRepository repository,
                                MetricHistoryRepository historyRepository) {
@@ -37,6 +38,17 @@ public class MacroMetricsService {
         this.repository = repository;
         this.historyRepository = historyRepository;
         this.httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
+    }
+
+    // Constructor for testing
+    public MacroMetricsService(PlaywrightScraperService scraperService, 
+                               MacroMetricRepository repository,
+                               MetricHistoryRepository historyRepository,
+                               HttpClient httpClient) {
+        this.scraperService = scraperService;
+        this.repository = repository;
+        this.historyRepository = historyRepository;
+        this.httpClient = httpClient;
     }
 
     @Scheduled(fixedRate = 3600000) // Run every hour

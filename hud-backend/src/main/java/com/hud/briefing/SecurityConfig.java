@@ -24,8 +24,12 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // Disabled for PoC simplicity with API
             .authorizeHttpRequests(auth -> auth
-                // Public Endpoints
+                // Public Endpoints & Static Resources
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg").permitAll()
+                // Frontend Routes (SPA)
+                .requestMatchers("/news/**", "/theaters", "/investments", "/config", "/observability").permitAll()
+                
+                // Public API Endpoints
                 .requestMatchers(HttpMethod.GET, "/api/news", "/api/briefings/latest", "/api/investments/vitals", "/api/investments/history/**", "/api/investments/events/**").permitAll()
                 .requestMatchers("/api/auth/status").permitAll()
                 

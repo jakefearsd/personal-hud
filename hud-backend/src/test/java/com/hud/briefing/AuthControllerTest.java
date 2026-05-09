@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.Map;
@@ -75,6 +77,31 @@ class AuthControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         Map<String, String> request = Map.of("newPassword", "123");
 
-        assertThrows(IllegalArgumentException.class, () -> authController.changePassword(request, authentication));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, 
+                () -> authController.changePassword(request, authentication));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    void shouldThrowUnauthorizedWhenNotAuthenticated() {
+        when(authentication.isAuthenticated()).thenReturn(false);
+        Map<String, String> request = Map.of("newPassword", "validPassword");
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, 
+                () -> authController.changePassword(request, authentication));
+        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenUserMissing() {
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getName()).thenReturn("missingUser");
+        when(userRepository.findByUsername("missingUser")).thenReturn(Optional.empty());
+
+        Map<String, String> request = Map.of("newPassword", "validPassword");
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, 
+                () -> authController.changePassword(request, authentication));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }
