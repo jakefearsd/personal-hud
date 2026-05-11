@@ -33,11 +33,13 @@ class MarketPredictionTest {
     @Test
     void shouldConstructWithFullArgs() {
         LocalDate now = LocalDate.now();
-        MarketPrediction p = new MarketPrediction("AAPL", now, now.plusDays(7), 150.0, "Rationale", "Synthesis", "Gemma", 10L);
+        MarketPrediction p = new MarketPrediction("AAPL", now, now.plusDays(7), 150.0, "Rationale", "Synthesis", "Gemma", 10L, 85, "Oil spike");
         
         assertEquals("AAPL", p.getTicker());
         assertEquals(150.0, p.getPredictedPrice());
         assertEquals("Rationale", p.getRationale());
         assertEquals("Gemma", p.getModelName());
+        assertEquals(85, p.getConfidenceScore());
+        assertEquals("Oil spike", p.getTailRisk());
     }
 }

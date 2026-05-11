@@ -77,4 +77,6 @@ export interface MarketPrediction {
   rationale: string;
   synthesis: string;
   modelName: string;
+  confidenceScore: number;
+  tailRisk: string;
 }

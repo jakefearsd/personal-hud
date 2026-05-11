@@ -2,7 +2,7 @@ server:
   port: 8888
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/hud}
+    url: ${DB_URL:jdbc:postgresql://localhost:6432/hud}
     username: ${DB_USER:huduser}
     password: ${DB_PASS:hudpass}
   jpa:

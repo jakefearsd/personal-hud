@@ -67,6 +67,8 @@ public class MacroMetricsService {
             Map.entry("000001.SS", "Shanghai Comp (China)"),
             Map.entry("AGG", "US Aggregate Bond (AGG)"),
             Map.entry("BNDX", "Intl Aggregate Bond (BNDX)"),
+            Map.entry("VXUS", "Vanguard Total Intl Stock (VXUS)"),
+            Map.entry("EFV", "iShares MSCI EAFE Value (EFV)"),
             Map.entry("^TNX", "US 10Y Treasury Yield"),
             Map.entry("BZ=F", "Brent Crude Oil"),
             Map.entry("CL=F", "WTI Crude Oil"),
@@ -109,10 +111,11 @@ public class MacroMetricsService {
         }
     }
 
+    @org.springframework.scheduling.annotation.Async
     public void syncHistoricalGaps() {
         List<String> symbols = List.of(
             "^GSPC", "^DJI", "^VIX", "^GDAXI", "^FTSE", "^STOXX50E", 
-            "^N225", "^HSI", "000001.SS", "AGG", "BNDX", "^TNX", 
+            "^N225", "^HSI", "000001.SS", "AGG", "BNDX", "VXUS", "EFV", "^TNX", 
             "BZ=F", "CL=F", "GC=F", "BTC-USD", "ETH-USD"
         );
         long now = Instant.now().getEpochSecond();

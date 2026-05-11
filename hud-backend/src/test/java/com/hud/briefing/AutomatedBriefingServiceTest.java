@@ -25,13 +25,14 @@ class AutomatedBriefingServiceTest {
     @Mock private PipelineRunRepository pipelineRunRepository;
     @Mock private TransactionTemplate transactionTemplate;
     @Mock private MarkdownService markdownService;
+    @Mock private com.hud.news.PredictionService predictionService;
 
     private AutomatedBriefingService service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new AutomatedBriefingService(llmService, briefingRepository, processorFactory, transactionTemplate, pipelineRunRepository, markdownService);
+        service = new AutomatedBriefingService(llmService, briefingRepository, processorFactory, transactionTemplate, pipelineRunRepository, markdownService, predictionService);
         
         // Mock the TransactionTemplate to execute the action immediately
         when(transactionTemplate.execute(any())).thenAnswer(invocation -> {

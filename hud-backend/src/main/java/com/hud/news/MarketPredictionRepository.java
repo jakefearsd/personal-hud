@@ -8,6 +8,8 @@ import java.util.Optional;
 public interface MarketPredictionRepository extends JpaRepository<MarketPrediction, Long> {
     List<MarketPrediction> findByGenerationDate(LocalDate date);
     List<MarketPrediction> findByTargetDateAndActualPriceIsNull(LocalDate date);
+    List<MarketPrediction> findByTargetDateLessThanEqualAndActualPriceIsNull(LocalDate date);
     List<MarketPrediction> findByTickerOrderByTargetDateAsc(String ticker);
     Optional<MarketPrediction> findTopByTickerOrderByGenerationDateDesc(String ticker);
+    long countByGenerationDate(LocalDate date);
 }

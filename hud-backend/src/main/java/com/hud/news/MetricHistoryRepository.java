@@ -7,4 +7,5 @@ import java.util.Optional;
 public interface MetricHistoryRepository extends JpaRepository<MetricHistory, Long> {
     List<MetricHistory> findByTickerOrderByTimestampAsc(String ticker);
     Optional<MetricHistory> findTopByTickerOrderByTimestampDesc(String ticker);
+    Optional<MetricHistory> findTopByTickerAndTimestampLessThanEqualOrderByTimestampDesc(String ticker, java.time.LocalDateTime timestamp);
 }

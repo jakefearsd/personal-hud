@@ -26,4 +26,5 @@ public interface DailyBriefingRepository extends JpaRepository<DailyBriefing, Lo
     List<DailyBriefing> findByModelLatest(String modelName);
 
     void deleteByCategoryAndModelNameAndGeneratedAtAfter(BriefingCategory category, String modelName, java.time.LocalDateTime after);
+    long countByGeneratedAtAfter(java.time.LocalDateTime after);
 }

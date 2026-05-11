@@ -26,19 +26,22 @@ public class AutomatedBriefingService {
     private final TransactionTemplate transactionTemplate;
     private final PipelineRunRepository pipelineRunRepository;
     private final MarkdownService markdownService;
+    private final com.hud.news.PredictionService predictionService;
 
     public AutomatedBriefingService(DynamicLlmService llmService, 
                                     DailyBriefingRepository repository,
                                     BriefingProcessorFactory processorFactory,
                                     TransactionTemplate transactionTemplate,
                                     PipelineRunRepository pipelineRunRepository,
-                                    MarkdownService markdownService) {
+                                    MarkdownService markdownService,
+                                    com.hud.news.PredictionService predictionService) {
         this.llmService = llmService;
         this.repository = repository;
         this.processorFactory = processorFactory;
         this.transactionTemplate = transactionTemplate;
         this.pipelineRunRepository = pipelineRunRepository;
         this.markdownService = markdownService;
+        this.predictionService = predictionService;
     }
 
     @Async
@@ -73,6 +76,9 @@ public class AutomatedBriefingService {
             logger.info("Starting daily briefing run for model: {}", model.name());
             executeFullPipeline(today, model);
         }
+
+        logger.info("Daily briefings complete. Triggering predictive analytics...");
+        predictionService.generateDailyPredictions();
     }
 
     @Async

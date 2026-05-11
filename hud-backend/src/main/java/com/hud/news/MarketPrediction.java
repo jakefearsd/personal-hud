@@ -26,12 +26,16 @@ public class MarketPrediction {
 
     private String modelName;
     private Long briefingId;
+    private Integer confidenceScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String tailRisk;
 
     public MarketPrediction() {}
 
     public MarketPrediction(String ticker, LocalDate generationDate, LocalDate targetDate, 
                             Double predictedPrice, String rationale, String synthesis, 
-                            String modelName, Long briefingId) {
+                            String modelName, Long briefingId, Integer confidenceScore, String tailRisk) {
         this.ticker = ticker;
         this.generationDate = generationDate;
         this.targetDate = targetDate;
@@ -40,6 +44,8 @@ public class MarketPrediction {
         this.synthesis = synthesis;
         this.modelName = modelName;
         this.briefingId = briefingId;
+        this.confidenceScore = confidenceScore;
+        this.tailRisk = tailRisk;
     }
 
     // Getters and Setters
@@ -63,4 +69,8 @@ public class MarketPrediction {
     public void setModelName(String modelName) { this.modelName = modelName; }
     public Long getBriefingId() { return briefingId; }
     public void setBriefingId(Long briefingId) { this.briefingId = briefingId; }
+    public Integer getConfidenceScore() { return confidenceScore; }
+    public void setConfidenceScore(Integer confidenceScore) { this.confidenceScore = confidenceScore; }
+    public String getTailRisk() { return tailRisk; }
+    public void setTailRisk(String tailRisk) { this.tailRisk = tailRisk; }
 }
