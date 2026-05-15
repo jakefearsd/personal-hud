@@ -116,7 +116,16 @@ export const ObservabilityView = () => {
                    {calculateDuration(run.startTime, run.endTime)}
                 </td>
                 <td className="col-error">
-                  {run.errorMessage && <span className="error-text">{run.errorMessage}</span>}
+                  {run.errorMessage && (
+                    <div className="error-container">
+                      <span className="error-text">{run.errorMessage}</span>
+                      {run.errorDetail && (
+                        <pre className="error-detail">
+                          {run.errorDetail}
+                        </pre>
+                      )}
+                    </div>
+                  )}
                   {!run.errorMessage && run.status === 'SUCCESS' && (
                     <span className="success-text">
                       {run.inputTokens !== undefined && run.outputTokens !== undefined ? (

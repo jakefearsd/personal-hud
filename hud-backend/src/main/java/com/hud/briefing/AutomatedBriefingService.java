@@ -138,6 +138,16 @@ public class AutomatedBriefingService {
                 current.setStatus(PipelineStatus.FAILED);
                 current.setEndTime(LocalDateTime.now());
                 current.setErrorMessage(e.getMessage());
+
+                // Capture cause chain for better diagnostics
+                StringBuilder detail = new StringBuilder();
+                Throwable cause = e;
+                while (cause != null) {
+                    detail.append(cause.getClass().getName()).append(": ").append(cause.getMessage()).append("\n");
+                    cause = cause.getCause();
+                }
+                current.setErrorDetail(detail.toString());
+
                 pipelineRunRepository.save(current);
                 return null;
             });

@@ -83,8 +83,26 @@ public class YahooMetricScraperStrategy implements ScraperStrategy<MacroMetric> 
                     String priceStr = loc.innerText().replaceAll("[^0-9.\\-]", "");
                     if (!priceStr.isEmpty()) {
                         double price = Double.parseDouble(priceStr);
-                        logger.info("[MARKET] Playwright Success for {} using {}: {}", ticker, selector, price);
-                        return new MacroMetric(ticker, label, price, 0.0, 0.0);
+                        
+                        // Attempt to find change/pct in siblings or nearby
+                        double change = 0.0;
+                        double pct = 0.0;
+                        try {
+                            var changeLoc = page.locator("[data-field='regularMarketChange']").first();
+                            var pctLoc = page.locator("[data-field='regularMarketChangePercent']").first();
+                            if (changeLoc.count() > 0) {
+                                change = Double.parseDouble(changeLoc.innerText().replaceAll("[^0-9.\\-]", ""));
+                            }
+                            if (pctLoc.count() > 0) {
+                                String pctText = pctLoc.innerText().replaceAll("[^0-9.\\-]", "");
+                                if (!pctText.isEmpty()) pct = Double.parseDouble(pctText);
+                            }
+                        } catch (Exception e) {
+                            logger.warn("[MARKET] Could not extract change data for {} via DOM", ticker);
+                        }
+
+                        logger.info("[MARKET] Playwright Success for {} using {}: {} (chg: {})", ticker, selector, price, change);
+                        return new MacroMetric(ticker, label, price, change, pct);
                     }
                 }
             }

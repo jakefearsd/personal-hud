@@ -38,6 +38,7 @@ export interface PipelineRun {
   startTime: string;
   endTime: string | null;
   errorMessage: string | null;
+  errorDetail: string | null;
   inputTokens?: number;
   outputTokens?: number;
 }

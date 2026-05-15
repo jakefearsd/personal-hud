@@ -25,6 +25,9 @@ public class PipelineRun {
     @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(columnDefinition = "TEXT")
+    private String errorDetail;
+
     private Integer inputTokens;
     private Integer outputTokens;
 
@@ -52,6 +55,8 @@ public class PipelineRun {
     public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+    public String getErrorDetail() { return errorDetail; }
+    public void setErrorDetail(String errorDetail) { this.errorDetail = errorDetail; }
     public Integer getInputTokens() { return inputTokens; }
     public void setInputTokens(Integer inputTokens) { this.inputTokens = inputTokens; }
     public Integer getOutputTokens() { return outputTokens; }

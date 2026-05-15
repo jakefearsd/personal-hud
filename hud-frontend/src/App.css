@@ -634,6 +634,26 @@ body {
   border-bottom: 1px solid var(--border-color);
   vertical-align: top;
 }
+.error-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.error-detail {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 10px;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  border-radius: 4px;
+  max-width: 300px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  line-height: 1.2;
+}
 
 .status-badge {
   display: inline-flex;
