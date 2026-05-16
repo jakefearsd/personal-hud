@@ -1,5 +1,6 @@
 package com.hud.news;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -37,18 +38,21 @@ public class MacroMetricsController {
         return eventRepository.findByTickerOrderByTimestampDesc(ticker);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/trigger")
     public String triggerUpdate() {
         service.updateMacroMetrics();
         return "Macro update triggered.";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/correlate")
     public String triggerCorrelation() {
         correlationService.correlateEvents();
         return "Market correlation analysis triggered.";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/sync")
     public String triggerSync() {
         service.syncHistoricalGaps();
@@ -65,6 +69,7 @@ public class MacroMetricsController {
         return predictionService.getHistory(ticker);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/predictions/trigger")
     public String triggerPredictions() {
         predictionService.generateDailyPredictions();

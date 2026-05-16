@@ -1,5 +1,6 @@
 package com.hud.briefing;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class SchedulingController {
         return repository.findAll();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public BriefingSchedule updateSchedule(@PathVariable Long id, @RequestBody BriefingSchedule updated) {
         BriefingSchedule existing = repository.findById(id).orElseThrow();
@@ -33,6 +35,7 @@ public class SchedulingController {
         return saved;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/init")
     public void seedSchedules() {
         if (repository.count() == 0) {

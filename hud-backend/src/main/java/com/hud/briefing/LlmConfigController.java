@@ -1,5 +1,6 @@
 package com.hud.briefing;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -32,6 +33,7 @@ public class LlmConfigController {
         return configs;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public LlmConfig saveConfig(@RequestBody LlmConfig config) {
         // If updating existing and key is masked, preserve the old key
@@ -44,11 +46,13 @@ public class LlmConfigController {
         return repository.save(config);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void deleteConfig(@PathVariable Long id) {
         repository.deleteById(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/toggle")
     public LlmConfig toggleActive(@PathVariable Long id) {
         LlmConfig config = repository.findById(id).orElseThrow();
@@ -56,6 +60,7 @@ public class LlmConfigController {
         return repository.save(config);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/run")
     public String runModel(@PathVariable Long id) {
         briefingService.generateForModel(id);

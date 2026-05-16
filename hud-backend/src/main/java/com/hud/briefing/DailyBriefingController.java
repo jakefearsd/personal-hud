@@ -1,5 +1,6 @@
 package com.hud.briefing;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -47,6 +48,7 @@ public class DailyBriefingController {
         return briefings;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/trigger")
     public String triggerBriefing() {
         briefingService.generateDailyBriefing();
