@@ -12,6 +12,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Boots the full context against a real Postgres so Flyway migrations run and
  * Hibernate ddl-auto=validate confirms the entities match the migrated schema.
+ *
+ * <p>Note: the 'test' profile is intentionally NOT active here — it disables Flyway
+ * and switches to H2; this test must run Flyway against real Postgres.
  */
 @Tag("integration")
 @Testcontainers

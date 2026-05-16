@@ -1,4 +1,3 @@
-
     create table briefing_schedules (
         active boolean not null,
         id bigserial not null,

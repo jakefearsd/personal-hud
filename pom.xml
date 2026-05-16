@@ -23,6 +23,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring-boot.version>3.2.5</spring-boot.version>
         
+        <!-- Testcontainers version override (Spring Boot BOM uses this property name) -->
+        <testcontainers.version>1.21.4</testcontainers.version>
+
         <!-- Quality Tool Versions -->
         <jacoco.version>0.8.12</jacoco.version>
         <pmd.version>3.26.0</pmd.version>

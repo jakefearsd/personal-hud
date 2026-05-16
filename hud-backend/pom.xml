@@ -15,6 +15,16 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Explicit BOM import so our testcontainers.version property wins over
+                 langchain4j-parent's transitive testcontainers-bom import at 1.20.3.
+                 Must appear first so Maven BOM first-declaration precedence applies. -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-bom</artifactId>
@@ -70,23 +80,15 @@
             <scope>test</scope>
         </dependency>
         
-        <!-- Integration Testing -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <version>1.21.4</version>
-            <scope>test</scope>
-        </dependency>
+        <!-- Integration Testing (versions managed via testcontainers.version in root pom) -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
-            <version>1.21.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.21.4</version>
             <scope>test</scope>
         </dependency>
 
