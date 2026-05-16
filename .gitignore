@@ -52,3 +52,10 @@ bin/
 Thumbs.db
 .key
 .key
+
+# Data & generated artifacts (regenerated via harvest_*.py)
+/*.csv
+bootstrap_*.sql
+
+# Local session cookies
+cookies.txt
