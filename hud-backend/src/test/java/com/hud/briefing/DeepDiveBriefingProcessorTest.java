@@ -28,33 +28,45 @@ class DeepDiveBriefingProcessorTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    private SourceLink link(String url) {
+        return new SourceLink(url, "Theater Feed", SourceTier.TIER_1);
+    }
+
     @Test
     void shouldProcessUkraineTheaterWithHighSignal() {
-        DeepDiveBriefingProcessor processor = new DeepDiveBriefingProcessor(scraperService, chatModel, sourceStrategy, synthesizer, BriefingCategory.THEATER_UKRAINE);
-        
-        when(sourceStrategy.getLinks(anyString(), anyInt())).thenReturn(List.of("http://test.com/intel"));
-        when(scraperService.extractFullText(eq("http://test.com/intel"), anyInt())).thenReturn("A very long piece of tactical field intelligence from the frontline that is definitely longer than 1500 characters so that the deep-dive processor doesn't complain about insufficient signal during its rigorous analytical lifecycle.".repeat(15));
-        when(synthesizer.fuseTheaterIntelligence(any(), any(), anyString())).thenReturn(new SynthesisResult("Fused Intel Report", 100, 10));
+        DeepDiveBriefingProcessor processor = new DeepDiveBriefingProcessor(scraperService, chatModel,
+                sourceStrategy, synthesizer, BriefingCategory.THEATER_UKRAINE);
 
-        SynthesisResult result = processor.process("ukraine");
+        when(sourceStrategy.getLinks(any(BriefingCategory.class), anyInt()))
+                .thenReturn(List.of(link("http://test.com/intel")));
+        when(scraperService.extractFullText(eq("http://test.com/intel"), anyInt()))
+                .thenReturn("A very long piece of tactical field intelligence from the frontline that is definitely longer than 2500 characters so that the deep-dive processor doesn't complain about insufficient signal during its rigorous analytical lifecycle.".repeat(20));
+        when(synthesizer.fuseTheaterIntelligence(any(), any(), anyString()))
+                .thenReturn(new SynthesisResult("Fused Intel Report", 100, 10));
+
+        SynthesisResult result = processor.process();
 
         assertEquals("Fused Intel Report", result.content());
-        verify(sourceStrategy).getLinks("ukraine", 15);
+        verify(sourceStrategy).getLinks(BriefingCategory.THEATER_UKRAINE, 15);
         verify(synthesizer).fuseTheaterIntelligence(eq(chatModel), eq(BriefingCategory.THEATER_UKRAINE), anyString());
     }
 
     @Test
     void shouldProcessGlobalSitrepWithMultiLinks() {
-        DeepDiveBriefingProcessor processor = new DeepDiveBriefingProcessor(scraperService, chatModel, sourceStrategy, synthesizer, BriefingCategory.GLOBAL_SITREP);
-        
-        when(sourceStrategy.getLinks(anyString(), anyInt())).thenReturn(List.of("http://a.com", "http://b.com"));
-        when(scraperService.extractFullText(anyString(), anyInt())).thenReturn("Valid strategic content for the global situational report meeting the character limit requirements.".repeat(20));
-        when(synthesizer.synthesizeGlobalSitrep(any(), anyString())).thenReturn(new SynthesisResult("Global Summary", 100, 10));
+        DeepDiveBriefingProcessor processor = new DeepDiveBriefingProcessor(scraperService, chatModel,
+                sourceStrategy, synthesizer, BriefingCategory.GLOBAL_SITREP);
 
-        SynthesisResult result = processor.process("all");
+        when(sourceStrategy.getLinks(any(BriefingCategory.class), anyInt()))
+                .thenReturn(List.of(link("http://a.com"), link("http://b.com")));
+        when(scraperService.extractFullText(anyString(), anyInt()))
+                .thenReturn("Valid strategic content for the global situational report meeting the character limit requirements.".repeat(25));
+        when(synthesizer.synthesizeGlobalSitrep(any(), anyString()))
+                .thenReturn(new SynthesisResult("Global Summary", 100, 10));
+
+        SynthesisResult result = processor.process();
 
         assertEquals("Global Summary", result.content());
-        verify(sourceStrategy).getLinks("all", 25);
+        verify(sourceStrategy).getLinks(BriefingCategory.GLOBAL_SITREP, 25);
         verify(synthesizer).synthesizeGlobalSitrep(eq(chatModel), anyString());
     }
 }

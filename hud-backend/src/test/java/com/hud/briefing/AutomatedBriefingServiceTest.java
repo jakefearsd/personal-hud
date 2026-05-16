@@ -50,7 +50,7 @@ class AutomatedBriefingServiceTest {
         
         BriefingProcessor mockProcessor = mock(BriefingProcessor.class);
         when(processorFactory.getProcessor(any(), any())).thenReturn(mockProcessor);
-        when(mockProcessor.process(anyString())).thenReturn(new SynthesisResult("Content", 100, 10));
+        when(mockProcessor.process()).thenReturn(new SynthesisResult("Content", 100, 10));
         
         when(pipelineRunRepository.save(any())).thenReturn(new PipelineRun());
         when(pipelineRunRepository.findById(any())).thenReturn(Optional.of(new PipelineRun()));
@@ -78,7 +78,7 @@ class AutomatedBriefingServiceTest {
         
         BriefingProcessor mockProcessor = mock(BriefingProcessor.class);
         when(processorFactory.getProcessor(any(), any())).thenReturn(mockProcessor);
-        when(mockProcessor.process(anyString())).thenReturn(new SynthesisResult("Content", 100, 10));
+        when(mockProcessor.process()).thenReturn(new SynthesisResult("Content", 100, 10));
         when(pipelineRunRepository.save(any())).thenReturn(new PipelineRun());
         when(pipelineRunRepository.findById(any())).thenReturn(Optional.of(new PipelineRun()));
 
@@ -108,7 +108,7 @@ class AutomatedBriefingServiceTest {
         
         BriefingProcessor mockProcessor = mock(BriefingProcessor.class);
         when(processorFactory.getProcessor(any(), any())).thenReturn(mockProcessor);
-        when(mockProcessor.process(anyString())).thenReturn(new SynthesisResult("Content", 100, 10));
+        when(mockProcessor.process()).thenReturn(new SynthesisResult("Content", 100, 10));
         when(pipelineRunRepository.save(any())).thenReturn(new PipelineRun());
         when(pipelineRunRepository.findById(any())).thenReturn(Optional.of(new PipelineRun()));
 
@@ -123,7 +123,7 @@ class AutomatedBriefingServiceTest {
         DynamicLlmService.NamedChatModel model = new DynamicLlmService.NamedChatModel("Gemma", null);
         BriefingProcessor mockProcessor = mock(BriefingProcessor.class);
         when(processorFactory.getProcessor(any(), any())).thenReturn(mockProcessor);
-        when(mockProcessor.process(anyString())).thenThrow(new RuntimeException("API Error"));
+        when(mockProcessor.process()).thenThrow(new RuntimeException("API Error"));
         
         PipelineRun run = new PipelineRun();
         run.setId(99L);
@@ -131,7 +131,7 @@ class AutomatedBriefingServiceTest {
         when(pipelineRunRepository.findById(99L)).thenReturn(Optional.of(run));
 
         try {
-            service.generateForCategory(LocalDate.now(), BriefingCategory.WORLD_NEWS, "query", model);
+            service.generateForCategory(LocalDate.now(), BriefingCategory.WORLD_NEWS, model);
         } catch (Exception e) {
             // expected
         }

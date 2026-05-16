@@ -3,25 +3,19 @@ package com.hud.briefing;
 import com.hud.news.PlaywrightScraperService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 
-/**
- * Handles high-resolution situational synthesis for tactical conflict theaters.
- */
 public class DeepDiveBriefingProcessor extends BriefingProcessor {
 
-    private final BriefingCategory category;
-
-    public DeepDiveBriefingProcessor(PlaywrightScraperService scraperService, 
-                                   ChatLanguageModel chatModel, 
-                                   BriefingSourceStrategy sourceStrategy,
-                                   IntelligenceSynthesizer synthesizer,
-                                   BriefingCategory category) {
-        super(scraperService, chatModel, sourceStrategy, synthesizer);
-        this.category = category;
+    public DeepDiveBriefingProcessor(PlaywrightScraperService scraperService,
+                                     ChatLanguageModel chatModel,
+                                     BriefingSourceStrategy sourceStrategy,
+                                     IntelligenceSynthesizer synthesizer,
+                                     BriefingCategory category) {
+        super(scraperService, chatModel, sourceStrategy, synthesizer, category);
     }
 
     @Override
-    protected int getLinkLimit() { 
-        return (category == BriefingCategory.GLOBAL_SITREP) ? 25 : 15; 
+    protected int getLinkLimit() {
+        return (category == BriefingCategory.GLOBAL_SITREP) ? 25 : 15;
     }
 
     @Override

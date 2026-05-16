@@ -85,11 +85,10 @@ public class AutomatedBriefingService {
     public void generateForCategory(BriefingCategory category) {
         List<DynamicLlmService.NamedChatModel> activeModels = llmService.getActiveModels();
         LocalDate today = LocalDate.now();
-        String query = category.getDefaultQuery();
-        
+
         for (DynamicLlmService.NamedChatModel model : activeModels) {
             try {
-                generateForCategory(today, category, query, model);
+                generateForCategory(today, category, model);
             } catch (Exception e) {
                 logger.error("Async category run failed for {} [{}]: {}", category, model.name(), e.getMessage(), e);
             }
@@ -99,22 +98,21 @@ public class AutomatedBriefingService {
     private void executeFullPipeline(LocalDate today, DynamicLlmService.NamedChatModel model) {
         // News Domain
         for (BriefingCategory category : BriefingCategory.values()) {
-            String query = category.getDefaultQuery();
-            try { 
-                generateForCategory(today, category, query, model); 
-            } catch (Exception e) { 
+            try {
+                generateForCategory(today, category, model);
+            } catch (Exception e) {
                 logger.error("Failed generation for {} [{}]: {}", category, model.name(), e.getMessage(), e);
             }
         }
     }
 
-    public void generateForCategory(LocalDate date, BriefingCategory category, String query, DynamicLlmService.NamedChatModel model) {
+    public void generateForCategory(LocalDate date, BriefingCategory category, DynamicLlmService.NamedChatModel model) {
         PipelineRun run = new PipelineRun(category, model.name(), PipelineStatus.PENDING, LocalDateTime.now());
         final PipelineRun savedRun = transactionTemplate.execute(status -> pipelineRunRepository.save(run));
 
         try {
             BriefingProcessor processor = processorFactory.getProcessor(category, model.model());
-            SynthesisResult result = processor.process(query);
+            SynthesisResult result = processor.process();
             
             transactionTemplate.execute(status -> {
                 // Save the synthesized briefing

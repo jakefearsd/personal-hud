@@ -6,11 +6,11 @@ import java.util.List;
  * Strategy interface for briefing data sources (GoF Strategy Pattern).
  */
 public interface BriefingSourceStrategy {
-    
+
     /**
-     * Discover article links for a given category/query.
+     * Discover article links (with their source name + tier) for a category.
      */
-    List<String> getLinks(String query, int limit);
+    List<SourceLink> getLinks(BriefingCategory category, int limit);
 
     /**
      * Determine if this strategy handles the given category.
