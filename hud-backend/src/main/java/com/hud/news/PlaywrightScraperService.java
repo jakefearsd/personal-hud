@@ -48,8 +48,8 @@ public class PlaywrightScraperService {
                 Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
                         .setUserAgent(USER_AGENT)
                         .setLocale("en-US");
-                try (BrowserContext context = browser.newContext(contextOptions)) {
-                    Page page = context.newPage();
+                try (BrowserContext context = browser.newContext(contextOptions);
+                     Page page = context.newPage()) {
                     return task.execute(page);
                 }
             }
