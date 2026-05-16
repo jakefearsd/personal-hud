@@ -5,6 +5,7 @@ import { ObservabilityView } from './components/ObservabilityView'
 import { ConfigView } from './components/ConfigView'
 import { InvestmentsView } from './components/InvestmentsView'
 import { LoginView } from './components/LoginView'
+import { ChangePasswordView } from './components/ChangePasswordView'
 import type { DailyBriefing, LlmConfig } from './components/types'
 import { User, LogOut } from 'lucide-react'
 import './App.css'
@@ -28,6 +29,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [username, setUsername] = useState('')
   const [showLogin, setShowLogin] = useState(false)
+  const [passwordChangeRequired, setPasswordChangeRequired] = useState(false)
 
   const fetchAuthStatus = useCallback(() => {
     fetch('/api/auth/status')
@@ -36,6 +38,7 @@ function App() {
         setIsAuthenticated(data.authenticated)
         setIsAdmin(data.isAdmin)
         setUsername(data.username || '')
+        setPasswordChangeRequired(data.passwordChangeRequired || false)
       })
       .catch(err => console.error("Auth check failed", err))
   }, [])
@@ -140,6 +143,14 @@ function App() {
 
   const showSubTabs = location.pathname.startsWith('/news');
   const showModelSwitcher = (location.pathname.startsWith('/news') || location.pathname === '/theaters') && configs.length > 0;
+
+  if (isAuthenticated && passwordChangeRequired) {
+    return (
+      <div className="app-container">
+        <ChangePasswordView onChanged={() => { setPasswordChangeRequired(false); fetchAuthStatus() }} />
+      </div>
+    )
+  }
 
   return (
     <div className="app-container">
