@@ -66,14 +66,14 @@ class LlmConfigControllerTest {
         c1.setApiKey("short");
         LlmConfig c2 = new LlmConfig("Test2", LlmProvider.GEMINI, "pro", true);
         c2.setApiKey("long-secret-key-1234");
-        
+
         when(repository.findAll()).thenReturn(List.of(c1, c2));
 
         List<LlmConfig> result = controller.getAllConfigs();
 
         assertEquals(2, result.size());
         assertEquals("********", result.get(0).getApiKey());
-        assertEquals("long...1234", result.get(1).getApiKey());
+        assertEquals("********", result.get(1).getApiKey());
     }
 
     @Test
@@ -81,11 +81,11 @@ class LlmConfigControllerTest {
         LlmConfig existing = new LlmConfig("Existing", LlmProvider.GEMINI, "pro", true);
         existing.setId(1L);
         existing.setApiKey("REAL-SECRET-KEY");
-        
+
         LlmConfig updated = new LlmConfig("Existing", LlmProvider.GEMINI, "pro", true);
         updated.setId(1L);
-        updated.setApiKey("REAL...-KEY"); // masked
-        
+        updated.setApiKey("********"); // fully masked
+
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -106,5 +106,16 @@ class LlmConfigControllerTest {
         String response = controller.runModel(1L);
         assertEquals("Model specific briefing run triggered.", response);
         verify(briefingService).generateForModel(1L);
+    }
+
+    @Test
+    void getAllConfigsFullyMasksApiKey() {
+        LlmConfig config = new LlmConfig("Cloud Gemini", LlmProvider.GEMINI, "gemini-2.0-flash", true);
+        config.setApiKey("AIzaSyVERYSECRETKEY1234567890");
+        when(repository.findAll()).thenReturn(List.of(config));
+
+        List<LlmConfig> result = controller.getAllConfigs();
+
+        assertEquals("********", result.get(0).getApiKey());
     }
 }

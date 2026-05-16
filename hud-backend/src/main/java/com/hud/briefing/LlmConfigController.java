@@ -8,7 +8,6 @@ import java.util.List;
 @RequestMapping("/api/config/brains")
 public class LlmConfigController {
 
-    private static final int MASK_THRESHOLD = 8;
     private final LlmConfigRepository repository;
     private final AutomatedBriefingService briefingService;
 
@@ -22,12 +21,7 @@ public class LlmConfigController {
         List<LlmConfig> configs = repository.findAll();
         configs.forEach(c -> {
             if (c.getApiKey() != null && !c.getApiKey().isBlank()) {
-                String key = c.getApiKey();
-                if (key.length() > MASK_THRESHOLD) {
-                    c.setApiKey(key.substring(0, 4) + "..." + key.substring(key.length() - 4));
-                } else {
-                    c.setApiKey("********");
-                }
+                c.setApiKey("********");
             }
         });
         return configs;
@@ -39,7 +33,8 @@ public class LlmConfigController {
         // If updating existing and key is masked, preserve the old key
         if (config.getId() != null) {
             LlmConfig existing = repository.findById(config.getId()).orElseThrow();
-            if (config.getApiKey() != null && config.getApiKey().contains("...")) {
+            if (config.getApiKey() != null
+                    && (config.getApiKey().equals("********") || config.getApiKey().isBlank())) {
                 config.setApiKey(existing.getApiKey());
             }
         }
