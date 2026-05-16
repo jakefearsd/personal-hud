@@ -8,6 +8,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
+
 @Component
 public class DatabaseSeeder {
 
@@ -25,13 +27,22 @@ public class DatabaseSeeder {
     @Value("${langchain4j.ollama.chat-model.num-ctx}")
     private Integer defaultNumCtx;
 
-    public DatabaseSeeder(LlmConfigRepository llmRepository, 
-                          UserRepository userRepository, 
+    @Value("${HUD_ADMIN_PASSWORD:}")
+    private String adminPassword;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String PW_CHARS =
+            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+
+    public DatabaseSeeder(LlmConfigRepository llmRepository,
+                          UserRepository userRepository,
                           PasswordEncoder passwordEncoder) {
         this.llmRepository = llmRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
+
+    void setAdminPassword(String adminPassword) { this.adminPassword = adminPassword; }
 
     @EventListener(ApplicationReadyEvent.class)
     public void seedData() {
@@ -49,11 +60,32 @@ public class DatabaseSeeder {
         }
     }
 
-    private void seedDefaultUser() {
+    void seedDefaultUser() {
         if (userRepository.count() == 0) {
-            logger.info("Seeding default admin user...");
-            AppUser admin = new AppUser("admin", passwordEncoder.encode("admin"), "ROLE_ADMIN");
+            String password = (adminPassword == null || adminPassword.isBlank())
+                    ? generatePassword()
+                    : adminPassword;
+            boolean generated = (adminPassword == null || adminPassword.isBlank());
+
+            AppUser admin = new AppUser("admin", passwordEncoder.encode(password), "ROLE_ADMIN");
+            admin.setPasswordChangeRequired(true);
             userRepository.save(admin);
+
+            if (generated) {
+                logger.warn("Seeded admin user with a GENERATED password: {} "
+                        + "-- change it on first login.", password);
+            } else {
+                logger.info("Seeded admin user from HUD_ADMIN_PASSWORD; "
+                        + "password change is required on first login.");
+            }
         }
+    }
+
+    private String generatePassword() {
+        StringBuilder sb = new StringBuilder(16);
+        for (int i = 0; i < 16; i++) {
+            sb.append(PW_CHARS.charAt(RANDOM.nextInt(PW_CHARS.length())));
+        }
+        return sb.toString();
     }
 }
