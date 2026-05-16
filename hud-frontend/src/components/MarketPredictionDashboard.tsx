@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   LineChart, Line, ResponsiveContainer, ReferenceDot
 } from 'recharts';
 import type { MarketPrediction, MetricHistory } from './types';
 import { BrainCircuit, Target, Activity, RefreshCcw } from 'lucide-react';
+import { apiFetch } from '../api';
 
 export const MarketPredictionDashboard = () => {
   const [predictions, setPredictions] = useState<MarketPrediction[]>([]);
@@ -106,7 +107,7 @@ export const MarketPredictionDashboard = () => {
   const triggerPredictions = async () => {
     setLoading(true);
     try {
-      await fetch('/api/investments/predictions/trigger', { method: 'POST' });
+      await apiFetch('/api/investments/predictions/trigger', { method: 'POST' });
       alert("Predictive analytics triggered. Projections will be available shortly.");
       await fetchPredictions();
     } catch (e) {

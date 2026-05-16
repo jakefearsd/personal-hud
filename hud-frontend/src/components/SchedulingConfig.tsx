@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, Power, Save } from 'lucide-react';
+import { apiFetch } from '../api';
 
 export interface BriefingSchedule {
   id: number;
@@ -37,7 +38,7 @@ export const SchedulingConfig = () => {
   };
 
   const updateSchedule = (schedule: BriefingSchedule) => {
-    fetch(`/api/config/schedules/${schedule.id}`, {
+    apiFetch(`/api/config/schedules/${schedule.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(schedule)
@@ -46,7 +47,7 @@ export const SchedulingConfig = () => {
   };
 
   const handleInit = () => {
-    fetch('/api/config/schedules/init', { method: 'POST' })
+    apiFetch('/api/config/schedules/init', { method: 'POST' })
       .then(() => fetchSchedules());
   };
 

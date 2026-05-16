@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { 
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import type { MacroMetric, MetricHistory } from './types';
 import { RefreshCcw, BarChart2 } from 'lucide-react';
+import { apiFetch } from '../api';
 
 interface Props {
   metrics: MacroMetric[];
@@ -37,7 +38,7 @@ export const ComparisonDashboard = ({ metrics }: Props) => {
   const triggerSync = async () => {
     setSyncing(true);
     try {
-      await fetch('/api/investments/sync', { method: 'POST' });
+      await apiFetch('/api/investments/sync', { method: 'POST' });
       await fetchData();
       alert("Historical data synchronization complete.");
     } catch (e) {

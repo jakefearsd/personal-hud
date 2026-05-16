@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { LlmConfig, LlmProvider } from './types';
 import { Save, Trash2, Power, BrainCircuit, Key, Play, Pencil, PlusCircle } from 'lucide-react';
 import { SchedulingConfig } from './SchedulingConfig';
+import { apiFetch } from '../api';
 
 export const ConfigView = () => {
   const [configs, setConfigs] = useState<LlmConfig[]>([]);
@@ -35,7 +36,7 @@ export const ConfigView = () => {
   }, []);
 
   const handleSave = () => {
-    fetch('/api/config/brains', {
+    apiFetch('/api/config/brains', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingConfig)
@@ -58,18 +59,18 @@ export const ConfigView = () => {
   };
 
   const handleToggle = (id: number) => {
-    fetch(`/api/config/brains/${id}/toggle`, { method: 'POST' })
+    apiFetch(`/api/config/brains/${id}/toggle`, { method: 'POST' })
       .then(() => fetchConfigs());
   };
 
   const handleRunModel = (id: number) => {
-    fetch(`/api/config/brains/${id}/run`, { method: 'POST' })
+    apiFetch(`/api/config/brains/${id}/run`, { method: 'POST' })
       .then(() => alert('Model-specific run triggered. Check Observability tab for progress.'));
   };
 
   const handleDelete = (id: number) => {
     if (window.confirm('Are you sure you want to delete this configuration?')) {
-      fetch(`/api/config/brains/${id}`, { method: 'DELETE' })
+      apiFetch(`/api/config/brains/${id}`, { method: 'DELETE' })
         .then(() => fetchConfigs());
     }
   };
@@ -247,11 +248,11 @@ const SecuritySettings = () => {
   const [pwdStatus, setPwdStatus] = useState<string | null>(null);
 
   const handleChangePassword = () => {
-    if (!newPassword || newPassword.length < 4) {
-      alert('Password must be at least 4 characters.');
+    if (!newPassword || newPassword.length < 12) {
+      alert('Password must be at least 12 characters.');
       return;
     }
-    fetch('/api/auth/password', {
+    apiFetch('/api/auth/password', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newPassword })

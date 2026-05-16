@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { MacroMetric } from './types';
 import { TrendingUp, TrendingDown, RefreshCcw, Landmark, Fuel, Shield, AlertTriangle, BarChart2 } from 'lucide-react';
+import { apiFetch } from '../api';
 import { MetricChart } from './MetricChart';
 import { ComparisonDashboard } from './ComparisonDashboard';
 import { MarketPredictionDashboard } from './MarketPredictionDashboard';
@@ -23,13 +24,13 @@ export const InvestmentsView = () => {
 
   const triggerRefresh = () => {
     setLoading(true);
-    fetch('/api/investments/trigger', { method: 'POST' })
+    apiFetch('/api/investments/trigger', { method: 'POST' })
       .then(() => fetchVitals());
   };
 
   const triggerCorrelation = () => {
     setLoading(true);
-    fetch('/api/investments/correlate', { method: 'POST' })
+    apiFetch('/api/investments/correlate', { method: 'POST' })
       .then(() => {
           alert("Analytic correlation triggered. The engine is searching for catalysts in today's briefings.");
           setLoading(false);

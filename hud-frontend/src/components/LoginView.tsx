@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LogIn, X } from 'lucide-react';
+import { apiFetch } from '../api';
 
 interface Props {
   onLoginSuccess: () => void;
@@ -21,7 +22,7 @@ export const LoginView = ({ onLoginSuccess, onCancel }: Props) => {
     params.append('username', username);
     params.append('password', password);
 
-    fetch('/api/auth/login', {
+    apiFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: params

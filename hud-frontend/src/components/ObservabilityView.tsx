@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { PipelineRun } from './types';
 import { Activity, CheckCircle, AlertCircle, Clock, RefreshCcw, Trash2 } from 'lucide-react';
+import { apiFetch } from '../api';
 
 export const ObservabilityView = () => {
   const [runs, setRuns] = useState<PipelineRun[]>([]);
@@ -24,7 +25,7 @@ export const ObservabilityView = () => {
     if (!window.confirm('Are you sure you want to flush all observability logs?')) return;
     
     setLoading(true);
-    fetch('/api/pipelines', { method: 'DELETE' })
+    apiFetch('/api/pipelines', { method: 'DELETE' })
       .then(() => {
         setRuns([]);
         setLoading(false);
