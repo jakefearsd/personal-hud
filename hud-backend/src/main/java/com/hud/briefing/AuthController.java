@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private static final int MIN_PASSWORD_LENGTH = 12;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -35,32 +37,48 @@ public class AuthController {
                     .collect(Collectors.toList());
             status.put("roles", roles);
             status.put("isAdmin", roles.contains("ROLE_ADMIN"));
+            boolean mustChange = userRepository.findByUsername(authentication.getName())
+                    .map(AppUser::isPasswordChangeRequired)
+                    .orElse(false);
+            status.put("passwordChangeRequired", mustChange);
         } else {
             status.put("authenticated", false);
             status.put("isAdmin", false);
+            status.put("passwordChangeRequired", false);
         }
         return status;
     }
 
     @PutMapping("/password")
-    public Map<String, String> changePassword(@RequestBody Map<String, String> request, Authentication authentication) {
+    public Map<String, String> changePassword(@RequestBody Map<String, String> request,
+                                              Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
-
-        String newPassword = request.get("newPassword");
-        if (newPassword == null || newPassword.length() < 4) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password too short");
-        }
+        validateStrength(request.get("newPassword"));
 
         AppUser user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        
-        user.setPassword(passwordEncoder.encode(newPassword));
+
+        user.setPassword(passwordEncoder.encode(request.get("newPassword")));
+        user.setPasswordChangeRequired(false);
         userRepository.save(user);
 
         Map<String, String> response = new HashMap<>();
         response.put("status", "success");
         return response;
+    }
+
+    private void validateStrength(String password) {
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Password must be at least " + MIN_PASSWORD_LENGTH + " characters");
+        }
+        boolean hasLetter = password.chars().anyMatch(Character::isLetter);
+        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        if (!hasLetter || !hasDigit) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Password must contain at least one letter and one digit");
+        }
     }
 }

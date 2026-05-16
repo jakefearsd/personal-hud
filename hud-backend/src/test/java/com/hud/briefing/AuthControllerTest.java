@@ -40,12 +40,16 @@ class AuthControllerTest {
         when(authentication.getName()).thenReturn("admin");
         doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")))
                 .when(authentication).getAuthorities();
+        AppUser user = new AppUser("admin", "hash", "ROLE_ADMIN");
+        user.setPasswordChangeRequired(true);
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(user));
 
         Map<String, Object> status = authController.getStatus(authentication);
 
         assertTrue((Boolean) status.get("authenticated"));
         assertTrue((Boolean) status.get("isAdmin"));
         assertEquals("admin", status.get("username"));
+        assertTrue((Boolean) status.get("passwordChangeRequired"));
     }
 
     @Test
@@ -59,25 +63,37 @@ class AuthControllerTest {
     void shouldChangePasswordSuccessfully() {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn("admin");
-        
+
         AppUser user = new AppUser("admin", "oldHash", "ROLE_ADMIN");
+        user.setPasswordChangeRequired(true);
         when(userRepository.findByUsername("admin")).thenReturn(Optional.of(user));
         when(passwordEncoder.encode(anyString())).thenReturn("newHash");
 
-        Map<String, String> request = Map.of("newPassword", "newSecurePass");
+        Map<String, String> request = Map.of("newPassword", "newSecurePass1");
         Map<String, String> response = authController.changePassword(request, authentication);
 
         assertEquals("success", response.get("status"));
         assertEquals("newHash", user.getPassword());
+        assertFalse(user.isPasswordChangeRequired());
         verify(userRepository).save(user);
     }
 
     @Test
     void shouldThrowExceptionWhenChangingPasswordTooShort() {
         when(authentication.isAuthenticated()).thenReturn(true);
-        Map<String, String> request = Map.of("newPassword", "123");
+        Map<String, String> request = Map.of("newPassword", "short1");
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, 
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> authController.changePassword(request, authentication));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    void shouldRejectPasswordWithoutDigit() {
+        when(authentication.isAuthenticated()).thenReturn(true);
+        Map<String, String> request = Map.of("newPassword", "alllettersnope");
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> authController.changePassword(request, authentication));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
@@ -85,9 +101,9 @@ class AuthControllerTest {
     @Test
     void shouldThrowUnauthorizedWhenNotAuthenticated() {
         when(authentication.isAuthenticated()).thenReturn(false);
-        Map<String, String> request = Map.of("newPassword", "validPassword");
+        Map<String, String> request = Map.of("newPassword", "validPassword1");
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, 
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> authController.changePassword(request, authentication));
         assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
     }
@@ -98,7 +114,7 @@ class AuthControllerTest {
         when(authentication.getName()).thenReturn("missingUser");
         when(userRepository.findByUsername("missingUser")).thenReturn(Optional.empty());
 
-        Map<String, String> request = Map.of("newPassword", "validPassword");
+        Map<String, String> request = Map.of("newPassword", "validPassword1");
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, 
                 () -> authController.changePassword(request, authentication));

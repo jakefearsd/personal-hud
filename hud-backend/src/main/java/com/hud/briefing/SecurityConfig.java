@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -20,8 +21,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           PasswordChangeFilter passwordChangeFilter) throws Exception {
         http
+            .addFilterAfter(passwordChangeFilter, UsernamePasswordAuthenticationFilter.class)
             .csrf(csrf -> csrf.disable()) // Disabled for PoC simplicity with API
             .authorizeHttpRequests(auth -> auth
                 // Public Endpoints & Static Resources
