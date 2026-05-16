@@ -19,6 +19,9 @@ public class AppUser {
     @Column(nullable = false)
     private String role; // e.g., "ROLE_ADMIN"
 
+    @Column(name = "password_change_required", nullable = false)
+    private boolean passwordChangeRequired = false;
+
     public AppUser() {}
 
     public AppUser(String username, String password, String role) {
@@ -36,4 +39,8 @@ public class AppUser {
     public void setPassword(String password) { this.password = password; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public boolean isPasswordChangeRequired() { return passwordChangeRequired; }
+    public void setPasswordChangeRequired(boolean passwordChangeRequired) {
+        this.passwordChangeRequired = passwordChangeRequired;
+    }
 }
