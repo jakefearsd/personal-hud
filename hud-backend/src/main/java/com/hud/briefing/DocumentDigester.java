@@ -36,7 +36,8 @@ public class DocumentDigester {
 
         Response<AiMessage> response = model.generate(UserMessage.from(prompt));
         TokenUsage usage = response.tokenUsage();
-        ArticleDigest digest = parseDigest(response.content().text(), source);
+        String responseText = response.content() != null ? response.content().text() : null;
+        ArticleDigest digest = parseDigest(responseText, source);
 
         return new DigestResult(
                 digest,
@@ -99,7 +100,7 @@ public class DocumentDigester {
                         case "KEY_FACTS"    -> addBullet(keyFacts, line);
                         case "DATED_EVENTS" -> addBullet(datedEvents, line);
                         case "ENTITIES"     -> addCsv(entities, line);
-                        default             -> { /* ignore stray pre-amble */ }
+                        default             -> { /* drop stray pre-amble and HEADLINE/RELEVANCE overflow */ }
                     }
                 }
             }
