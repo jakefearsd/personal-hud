@@ -17,6 +17,20 @@ Information aggregator and scraper to support decision making.
 
 ---
 
+### Admin Account Setup
+
+On first startup against an empty database the application seeds an `admin` user automatically.
+
+- **Set a known password** by exporting `HUD_ADMIN_PASSWORD` before starting the app:
+  ```bash
+  export HUD_ADMIN_PASSWORD=your-password-here
+  docker compose up --build -d
+  ```
+- **If the variable is unset**, a random 16-character password is generated and printed once at WARN level in the application log — look for the line containing `Seeded admin user with a GENERATED password`.
+- Either way, **the admin account requires a password change on first login**.
+
+---
+
 ### Recommended: Build & Run (Containerized)
 This is the "no fuss" way to run the application with its dedicated database.
 
@@ -63,6 +77,49 @@ If you prefer to run things outside of Docker:
    ```bash
    mvn spring-boot:run -pl hud-backend
    ```
+
+---
+
+### Testing
+
+Fast unit tests (no external dependencies):
+```bash
+mvn test
+# or equivalently:
+./bin/test.sh --unit
+```
+
+Full suite including integration and E2E tests (requires Docker, a live Ollama server, and/or a Gemini API key):
+```bash
+mvn test -Pintegration
+# or equivalently:
+./bin/test.sh --int
+```
+
+The default build excludes tests tagged `integration` via the `surefire.excludedGroups` property. The `-Pintegration` Maven profile clears that exclusion so all tests run.
+
+---
+
+### Database Schema
+
+Schema is managed by [Flyway](https://flywaydb.org/) migrations located in:
+```
+hud-backend/src/main/resources/db/migration/
+```
+
+Migrations run automatically on startup. In production, Hibernate is set to `ddl-auto: validate` — it validates the schema against the entity model but never alters it; all structural changes go through a new migration script.
+
+---
+
+### Data Bootstrap Scripts
+
+`bootstrap_global.sql` and `bootstrap_history.sql` are **not tracked in git**. Regenerate them locally when needed:
+```bash
+python harvest_global.py    # rebuilds bootstrap_global.sql
+python harvest_history.py   # rebuilds bootstrap_history.sql
+```
+
+---
 
 ## Project Structure
 - `hud-backend`: Spring Boot application.
