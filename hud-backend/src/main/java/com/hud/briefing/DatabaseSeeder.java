@@ -42,6 +42,7 @@ public class DatabaseSeeder {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // Package-private for unit testing (DatabaseSeederTest).
     void setAdminPassword(String adminPassword) { this.adminPassword = adminPassword; }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -60,6 +61,7 @@ public class DatabaseSeeder {
         }
     }
 
+    // Package-private for unit testing (DatabaseSeederTest).
     void seedDefaultUser() {
         if (userRepository.count() == 0) {
             String password = (adminPassword == null || adminPassword.isBlank())
