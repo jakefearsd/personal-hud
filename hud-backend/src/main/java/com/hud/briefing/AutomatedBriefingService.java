@@ -44,7 +44,7 @@ public class AutomatedBriefingService {
         this.predictionService = predictionService;
     }
 
-    @Async
+    @Async("briefingExecutor")
     public void generateForModel(Long configId) {
         LlmConfig config = llmService.getConfigRepository().findById(configId)
                 .orElseThrow(() -> new RuntimeException("Model config not found: " + configId));
@@ -61,7 +61,7 @@ public class AutomatedBriefingService {
         executeFullPipeline(today, model);
     }
 
-    @Async
+    @Async("briefingExecutor")
     @Scheduled(cron = "0 0 6 * * *")
     public void generateDailyBriefing() {
         LocalDate today = LocalDate.now();
@@ -81,7 +81,7 @@ public class AutomatedBriefingService {
         predictionService.generateDailyPredictions();
     }
 
-    @Async
+    @Async("briefingExecutor")
     public void generateForCategory(BriefingCategory category) {
         List<DynamicLlmService.NamedChatModel> activeModels = llmService.getActiveModels();
         LocalDate today = LocalDate.now();
