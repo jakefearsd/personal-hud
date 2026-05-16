@@ -8,6 +8,7 @@ import { LoginView } from './components/LoginView'
 import { ChangePasswordView } from './components/ChangePasswordView'
 import type { DailyBriefing, LlmConfig } from './components/types'
 import { User, LogOut } from 'lucide-react'
+import { apiFetch } from './api'
 import './App.css'
 
 interface NewsArticle {
@@ -113,7 +114,7 @@ function App() {
   const triggerBriefing = () => {
     if (!isAdmin) return;
     setLoading(true)
-    fetch('/api/briefings/trigger', { method: 'POST' })
+    apiFetch('/api/briefings/trigger', { method: 'POST' })
       .then(res => {
         if (res.ok) {
            alert('Briefing generation started for all active models.')
@@ -129,7 +130,7 @@ function App() {
   }
 
   const handleLogout = () => {
-    fetch('/api/auth/logout', { method: 'POST' })
+    apiFetch('/api/auth/logout', { method: 'POST' })
       .then(() => {
         setIsAuthenticated(false)
         setIsAdmin(false)

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiFetch } from '../api'
 
 interface Props {
   onChanged: () => void
@@ -16,7 +17,7 @@ export function ChangePasswordView({ onChanged }: Props) {
       setError('Passwords do not match')
       return
     }
-    fetch('/api/auth/password', {
+    apiFetch('/api/auth/password', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newPassword: password }),
