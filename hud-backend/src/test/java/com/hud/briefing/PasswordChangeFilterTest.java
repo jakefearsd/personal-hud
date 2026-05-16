@@ -1,6 +1,7 @@
 package com.hud.briefing;
 
 import jakarta.servlet.FilterChain;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,11 @@ class PasswordChangeFilterTest {
     @Mock private UserRepository userRepository;
     @Mock private FilterChain chain;
     private PasswordChangeFilter filter;
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {
@@ -51,5 +57,15 @@ class PasswordChangeFilterTest {
         filter.doFilter(new MockHttpServletRequest("PUT", "/api/auth/password"), response, chain);
         assertEquals(SC_OK, response.getStatus());
         verify(chain).doFilter(any(), any());
+    }
+
+    @Test
+    void allowsRequestWhenUnauthenticated() throws Exception {
+        SecurityContextHolder.clearContext();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(new MockHttpServletRequest("GET", "/api/news"), response, chain);
+        assertEquals(SC_OK, response.getStatus());
+        verify(chain).doFilter(any(), any());
+        verify(userRepository, never()).findByUsername(any());
     }
 }

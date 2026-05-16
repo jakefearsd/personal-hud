@@ -55,12 +55,13 @@ public class AuthController {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
-        validateStrength(request.get("newPassword"));
+        String newPassword = request.get("newPassword");
+        validateStrength(newPassword);
 
         AppUser user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        user.setPassword(passwordEncoder.encode(request.get("newPassword")));
+        user.setPassword(passwordEncoder.encode(newPassword));
         user.setPasswordChangeRequired(false);
         userRepository.save(user);
 

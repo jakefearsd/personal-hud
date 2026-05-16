@@ -99,6 +99,16 @@ class AuthControllerTest {
     }
 
     @Test
+    void shouldRejectPasswordWithoutLetter() {
+        when(authentication.isAuthenticated()).thenReturn(true);
+        Map<String, String> request = Map.of("newPassword", "123456789012");
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> authController.changePassword(request, authentication));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
     void shouldThrowUnauthorizedWhenNotAuthenticated() {
         when(authentication.isAuthenticated()).thenReturn(false);
         Map<String, String> request = Map.of("newPassword", "validPassword1");

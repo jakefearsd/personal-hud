@@ -38,6 +38,8 @@ public class PasswordChangeFilter extends OncePerRequestFilter {
             path = request.getRequestURI();
         }
         if (auth != null && auth.isAuthenticated() && !EXEMPT_PATHS.contains(path)) {
+            // Fail-open: a missing user record has no password to change. This is a
+            // UX gate only -- authorization is enforced by Spring Security separately.
             boolean mustChange = userRepository.findByUsername(auth.getName())
                     .map(AppUser::isPasswordChangeRequired)
                     .orElse(false);
