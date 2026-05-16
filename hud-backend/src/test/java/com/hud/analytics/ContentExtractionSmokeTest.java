@@ -2,10 +2,12 @@ package com.hud.analytics;
 
 import net.dankito.readability4j.Article;
 import net.dankito.readability4j.Readability4J;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("integration")
 class ContentExtractionSmokeTest {
 
     @Test

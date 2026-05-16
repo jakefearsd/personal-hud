@@ -2,6 +2,7 @@ package com.hud.analytics;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.nio.file.Files;
@@ -10,6 +11,7 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Tag("integration")
 class GeminiIntegrationTest {
 
     private String getApiKey() throws Exception {

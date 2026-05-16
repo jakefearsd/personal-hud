@@ -176,6 +176,7 @@
                     <environmentVariables>
                         <DOCKER_HOST>unix:///var/run/docker.sock</DOCKER_HOST>
                     </environmentVariables>
+                    <excludedGroups>${surefire.excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
             

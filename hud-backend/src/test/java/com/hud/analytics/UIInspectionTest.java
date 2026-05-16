@@ -2,10 +2,12 @@ package com.hud.analytics;
 
 import com.microsoft.playwright.*;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Paths;
 
 @Disabled("Requires a stable running containerized application")
+@Tag("integration")
 class UIInspectionTest {
     @Test
     void takeScreenshotOfFailure() {

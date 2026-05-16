@@ -30,6 +30,8 @@
         <jacoco.version>0.8.12</jacoco.version>
         <pmd.version>3.26.0</pmd.version>
         <spotbugs.version>4.8.6.6</spotbugs.version>
+
+        <surefire.excludedGroups>integration</surefire.excludedGroups>
     </properties>
 
     <dependencyManagement>
@@ -114,5 +116,14 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>integration</id>
+            <properties>
+                <surefire.excludedGroups></surefire.excludedGroups>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

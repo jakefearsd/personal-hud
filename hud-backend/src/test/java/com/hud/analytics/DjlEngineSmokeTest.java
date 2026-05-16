@@ -2,11 +2,13 @@ package com.hud.analytics;
 
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDManager;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@Tag("integration")
 class DjlEngineSmokeTest {
 
     @Test

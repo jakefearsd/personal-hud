@@ -14,6 +14,7 @@ import com.hud.news.NewsArticle;
 import com.hud.news.PlaywrightScraperService;
 import net.dankito.readability4j.Article;
 import net.dankito.readability4j.Readability4J;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,6 +27,7 @@ import java.util.List;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Tag("integration")
 class ModelComparisonTest {
 
     @Autowired
