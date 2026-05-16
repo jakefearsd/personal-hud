@@ -1,5 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
 test('renders strategic briefings on default theaters tab', async () => {
@@ -12,7 +13,11 @@ test('renders strategic briefings on default theaters tab', async () => {
     json: () => Promise.resolve(mockBriefings),
   }));
 
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>
+  );
 
   await waitFor(() => {
     expect(screen.getByText('European Theater: Ukraine')).toBeInTheDocument();
@@ -30,7 +35,11 @@ test('renders financial news articles on Live sub-tab of News', async () => {
     json: () => Promise.resolve(mockArticles),
   }));
 
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>
+  );
 
   // Switch to News tab
   const newsTab = screen.getByText(/News/i);
