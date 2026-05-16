@@ -107,4 +107,41 @@ class DatabaseSourceStrategyTest {
 
         assertEquals(3, links.size());
     }
+
+    @Test
+    void resolvesIswGlobalReturnsAllLinksUnfiltered() {
+        NewsSource isw = new NewsSource(BriefingCategory.GLOBAL_SITREP, "ISW Global",
+                "global", SourceType.ISW, SourceTier.TIER_1, 100, true);
+        when(sourceRepository.findByCategoryAndActiveTrue(BriefingCategory.GLOBAL_SITREP))
+                .thenReturn(List.of(isw));
+        when(scraperService.getIswLinks(anyInt())).thenReturn(List.of(
+                "https://isw/offensive-campaign-assessment-1",
+                "https://isw/iran-update-1",
+                "https://isw/conflict-update-1"));
+
+        List<SourceLink> links = strategy.getLinks(BriefingCategory.GLOBAL_SITREP, 10);
+
+        assertEquals(3, links.size());
+    }
+
+    @Test
+    void ordersHigherWeightSourcesFirst() {
+        NewsSource low = new NewsSource(BriefingCategory.FINANCE, "Low Weight", "https://low/rss",
+                SourceType.RSS, SourceTier.TIER_2, 10, true);
+        NewsSource high = new NewsSource(BriefingCategory.FINANCE, "High Weight", "https://high/rss",
+                SourceType.RSS, SourceTier.TIER_1, 200, true);
+        // Repository returns low-weight first; the strategy must reorder by weight descending.
+        when(sourceRepository.findByCategoryAndActiveTrue(BriefingCategory.FINANCE))
+                .thenReturn(List.of(low, high));
+        when(scraperService.getLinksFromRss(eq("https://high/rss"), anyInt()))
+                .thenReturn(List.of("h1"));
+        when(scraperService.getLinksFromRss(eq("https://low/rss"), anyInt()))
+                .thenReturn(List.of("l1"));
+
+        List<SourceLink> links = strategy.getLinks(BriefingCategory.FINANCE, 10);
+
+        assertEquals(2, links.size());
+        assertEquals("h1", links.get(0).url());
+        assertEquals("High Weight", links.get(0).sourceName());
+    }
 }

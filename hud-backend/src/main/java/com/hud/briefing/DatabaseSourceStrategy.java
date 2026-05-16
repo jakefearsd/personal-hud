@@ -53,6 +53,11 @@ public class DatabaseSourceStrategy implements BriefingSourceStrategy {
                 : aggregated;
     }
 
+    /**
+     * Returns true for every category: this is the sole BriefingSourceStrategy.
+     * The supports() contract is retained so BriefingSourceFactory's selection
+     * still works and additional strategies can be introduced later.
+     */
     @Override
     public boolean supports(BriefingCategory category) {
         return true;
@@ -100,6 +105,7 @@ public class DatabaseSourceStrategy implements BriefingSourceStrategy {
                     .limit(limit)
                     .collect(Collectors.toList());
         }
+        // "global" (and any unrecognised keyword) takes the whole ISW index, capped at the limit.
         return links.stream().limit(limit).collect(Collectors.toList());
     }
 }
