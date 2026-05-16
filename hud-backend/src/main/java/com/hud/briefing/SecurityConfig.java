@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -25,7 +26,8 @@ public class SecurityConfig {
                                            PasswordChangeFilter passwordChangeFilter) throws Exception {
         http
             .addFilterAfter(passwordChangeFilter, UsernamePasswordAuthenticationFilter.class)
-            .csrf(csrf -> csrf.disable()) // Disabled for PoC simplicity with API
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
             .authorizeHttpRequests(auth -> auth
                 // Public Endpoints & Static Resources
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg").permitAll()
