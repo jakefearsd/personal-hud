@@ -70,7 +70,7 @@ public class DatabaseSeeder {
             boolean generated = (adminPassword == null || adminPassword.isBlank());
 
             AppUser admin = new AppUser("admin", passwordEncoder.encode(password), "ROLE_ADMIN");
-            admin.setPasswordChangeRequired(true);
+            admin.setPasswordChangeRequired(false);
             userRepository.save(admin);
 
             if (generated) {

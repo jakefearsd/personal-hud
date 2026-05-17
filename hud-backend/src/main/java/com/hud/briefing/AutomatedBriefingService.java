@@ -107,6 +107,15 @@ public class AutomatedBriefingService {
     }
 
     public void generateForCategory(LocalDate date, BriefingCategory category, DynamicLlmService.NamedChatModel model) {
+        // IDEMPOTENCY CHECK: Do not start if a run is already pending for this category
+        boolean alreadyRunning = transactionTemplate.execute(status -> 
+                pipelineRunRepository.existsByCategoryAndStatus(category, PipelineStatus.PENDING));
+        
+        if (Boolean.TRUE.equals(alreadyRunning)) {
+            logger.warn("[IDEMPOTENCY] Skipping run for {} because a PENDING run already exists.", category);
+            return;
+        }
+
         PipelineRun run = new PipelineRun(category, model.name(), PipelineStatus.PENDING, LocalDateTime.now());
         final PipelineRun savedRun = transactionTemplate.execute(status -> pipelineRunRepository.save(run));
 

@@ -28,6 +28,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/hud
       DB_USER: huduser
       DB_PASS: hudpass
+      HUD_ADMIN_PASSWORD: admin
     restart: always
 
 volumes:

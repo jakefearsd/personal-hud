@@ -24,12 +24,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http,
-                                           PasswordChangeFilter passwordChangeFilter) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .addFilterAfter(passwordChangeFilter, UsernamePasswordAuthenticationFilter.class)
-            .csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // Public Endpoints & Static Resources
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg").permitAll()
@@ -50,11 +47,13 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginProcessingUrl("/api/auth/login")
                 .successHandler((req, res, auth) -> {
+                    System.out.println("Login SUCCESS for user: " + auth.getName());
                     res.setStatus(HttpServletResponse.SC_OK);
                     res.setContentType("application/json");
                     res.getWriter().write("{\"status\":\"success\"}");
                 })
                 .failureHandler((req, res, exp) -> {
+                    System.out.println("Login FAILURE for user: " + req.getParameter("username") + " - " + exp.getMessage());
                     res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
                     res.getWriter().write("{\"status\":\"error\",\"message\":\"Unauthorized\"}");

@@ -36,7 +36,8 @@ export const ObservabilityView = () => {
       });
   };
 
-  const formatTimestamp = (isoString: string) => {
+  const formatTimestamp = (isoString: string | null | undefined) => {
+    if (!isoString) return 'N/A';
     try {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return 'N/A';
@@ -53,13 +54,15 @@ export const ObservabilityView = () => {
     }
   };
 
-  const calculateDuration = (start: string, end: string | null) => {
+  const calculateDuration = (start: string | null | undefined, end: string | null | undefined) => {
+    if (!start) return 'N/A';
     if (!end) return 'Ongoing...';
     try {
       const s = new Date(start).getTime();
       const e = new Date(end).getTime();
       if (isNaN(s) || isNaN(e)) return 'N/A';
-      return `${((e - s) / 1000).toFixed(1)}s`;
+      const duration = (e - s) / 1000;
+      return duration >= 0 ? `${duration.toFixed(1)}s` : 'N/A';
     } catch (err) {
       return 'N/A';
     }
@@ -71,12 +74,24 @@ export const ObservabilityView = () => {
     return () => clearInterval(interval);
   }, []);
 
+  if (!Array.isArray(runs) && !loading) {
+    return (
+      <div className="observability-view error-state">
+        <div className="empty-state">
+          <AlertCircle size={48} />
+          <p>Failed to load pipeline data. Please refresh.</p>
+          <button className="trigger-btn" onClick={fetchRuns}>Retry</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="observability-view">
       <div className="view-header">
         <h2>Pipeline Observability</h2>
         <div className="header-actions">
-          <button className="trigger-btn secondary" onClick={flushRuns} disabled={loading || runs.length === 0}>
+          <button className="trigger-btn secondary" onClick={flushRuns} disabled={loading || !runs || runs.length === 0}>
             <Trash2 size={16} />
             Flush Logs
           </button>
@@ -99,15 +114,15 @@ export const ObservabilityView = () => {
             </tr>
           </thead>
           <tbody>
-            {Array.isArray(runs) && runs.map(run => (
+            {runs.map(run => (
               <tr key={run.id} className={`status-${run.status?.toLowerCase() || 'unknown'}`}>
-                <td className="col-category">{run.category}</td>
+                <td className="col-category">{run.category || 'N/A'}</td>
                 <td className="col-status">
                   <div className="status-badge">
                     {run.status === 'PENDING' && <Activity size={14} className="animate-pulse" />}
                     {run.status === 'SUCCESS' && <CheckCircle size={14} />}
                     {run.status === 'FAILED' && <AlertCircle size={14} />}
-                    {run.status}
+                    {run.status || 'UNKNOWN'}
                   </div>
                 </td>
                 <td className="col-time">
@@ -129,7 +144,7 @@ export const ObservabilityView = () => {
                   )}
                   {!run.errorMessage && run.status === 'SUCCESS' && (
                     <span className="success-text">
-                      {run.inputTokens !== undefined && run.outputTokens !== undefined ? (
+                      {run.inputTokens != null && run.outputTokens != null ? (
                         <span className="token-metrics">
                           In: {run.inputTokens.toLocaleString()} | Out: {run.outputTokens.toLocaleString()} tokens
                         </span>
@@ -141,6 +156,11 @@ export const ObservabilityView = () => {
                 </td>
               </tr>
             ))}
+            {runs.length === 0 && !loading && (
+               <tr>
+                 <td colSpan={5} className="empty-row">No pipeline runs found.</td>
+               </tr>
+            )}
           </tbody>
         </table>
       </div>
