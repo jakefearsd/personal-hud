@@ -42,10 +42,16 @@ public abstract class BriefingProcessor {
         if (links.isEmpty()) {
             throw new IllegalStateException("No signal sources found for: " + category);
         }
+        
+        logger.info("[PIPELINE] Found {} candidate links for category {}", links.size(), category);
 
         String consolidatedSignal = acquireSignal(links);
 
+        logger.info("[PIPELINE] Acquired {} characters of situational signal for {}", consolidatedSignal.length(), category);
+
         if (consolidatedSignal.length() < getMinRequiredChars()) {
+            logger.error("[PIPELINE] ABORTING: Insufficient situational signal ({} chars) for {}. Required: {}", 
+                    consolidatedSignal.length(), category, getMinRequiredChars());
             throw new IllegalStateException("Insufficient situational signal captured.");
         }
 
@@ -59,20 +65,28 @@ public abstract class BriefingProcessor {
 
     protected String acquireSignal(List<SourceLink> links) {
         StringBuilder sb = new StringBuilder();
+        int successCount = 0;
         for (SourceLink link : links) {
             String text = scraperService.extractFullText(link.url(), getScrapeDepth());
             if (isPlausibleContent(text, link.url())) {
                 sb.append("\n--- START SOURCE ---\n").append(text).append("\n--- END SOURCE ---\n");
+                successCount++;
+            } else {
+                logger.debug("[PIPELINE] Link {} rejected: text length = {}", link.url(), (text != null ? text.length() : "null"));
             }
         }
+        logger.info("[PIPELINE] Category {} processed {} links, {} passed plausibility check.", category, links.size(), successCount);
         return sb.toString();
     }
 
     protected boolean isPlausibleContent(String text, String url) {
         if (text == null || text.length() < 500) return false;
         String lower = text.toLowerCase(Locale.ROOT);
-        return !lower.contains("before you continue")
-                && !lower.contains("accept all cookies")
-                && !url.contains("/about");
+        boolean isAdOrCookie = lower.contains("before you continue")
+                || lower.contains("accept all cookies")
+                || url.contains("/about");
+        
+        if (isAdOrCookie) return false;
+        return true;
     }
 }
