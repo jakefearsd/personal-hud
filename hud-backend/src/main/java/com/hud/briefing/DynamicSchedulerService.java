@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
 @Service
-@EnableScheduling
 public class DynamicSchedulerService {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamicSchedulerService.class);

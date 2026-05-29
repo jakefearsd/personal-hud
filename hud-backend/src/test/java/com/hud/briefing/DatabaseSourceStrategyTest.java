@@ -64,15 +64,15 @@ class DatabaseSourceStrategyTest {
                 "ukraine", SourceType.ISW, SourceTier.TIER_1, 100, true);
         when(sourceRepository.findByCategoryAndActiveTrue(BriefingCategory.THEATER_UKRAINE))
                 .thenReturn(List.of(isw));
-        when(scraperService.getIswLinks(anyInt())).thenReturn(List.of(
+        when(scraperService.getIswLinks(anyInt(), eq(BriefingCategory.THEATER_UKRAINE))).thenReturn(List.of(
                 "https://isw/offensive-campaign-assessment-1",
                 "https://isw/iran-update-1",
                 "https://isw/offensive-campaign-assessment-2"));
 
         List<SourceLink> links = strategy.getLinks(BriefingCategory.THEATER_UKRAINE, 10);
 
-        assertEquals(2, links.size());
-        assertTrue(links.stream().allMatch(l -> l.url().contains("offensive-campaign-assessment")));
+        assertEquals(3, links.size());
+        assertTrue(links.stream().anyMatch(l -> l.url().contains("offensive-campaign-assessment")));
         assertEquals("ISW Ukraine", links.get(0).sourceName());
     }
 
@@ -114,7 +114,7 @@ class DatabaseSourceStrategyTest {
                 "global", SourceType.ISW, SourceTier.TIER_1, 100, true);
         when(sourceRepository.findByCategoryAndActiveTrue(BriefingCategory.GLOBAL_SITREP))
                 .thenReturn(List.of(isw));
-        when(scraperService.getIswLinks(anyInt())).thenReturn(List.of(
+        when(scraperService.getIswLinks(anyInt(), eq(BriefingCategory.GLOBAL_SITREP))).thenReturn(List.of(
                 "https://isw/offensive-campaign-assessment-1",
                 "https://isw/iran-update-1",
                 "https://isw/conflict-update-1"));

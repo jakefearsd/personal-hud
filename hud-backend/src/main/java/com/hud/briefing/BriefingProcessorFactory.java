@@ -25,17 +25,18 @@ public class BriefingProcessorFactory {
 
     public BriefingProcessor getProcessor(BriefingCategory category, ChatLanguageModel model) {
         BriefingSourceStrategy strategy = sourceFactory.getStrategy(category);
+        BriefingProcessorConfiguration config = getConfiguration(category);
 
-        if (isTheaterCategory(category)) {
-            return new DeepDiveBriefingProcessor(scraperService, model, strategy, synthesizer, category);
-        } else {
-            return new StandardBriefingProcessor(scraperService, model, strategy, synthesizer, category);
-        }
+        return new BriefingProcessor(scraperService, model, strategy, synthesizer, category, config);
     }
 
-    private boolean isTheaterCategory(BriefingCategory c) {
-        return c == BriefingCategory.THEATER_UKRAINE || 
-               c == BriefingCategory.THEATER_MIDDLE_EAST || 
-               c == BriefingCategory.GLOBAL_SITREP;
+    private BriefingProcessorConfiguration getConfiguration(BriefingCategory category) {
+        if (category == BriefingCategory.GLOBAL_SITREP) {
+            return BriefingProcessorConfiguration.GLOBAL_SITREP;
+        }
+        if (category.name().startsWith("THEATER_")) {
+            return BriefingProcessorConfiguration.DEEP_DIVE;
+        }
+        return BriefingProcessorConfiguration.STANDARD;
     }
 }

@@ -17,11 +17,19 @@ public class FredYieldScraperStrategy implements ScraperStrategy<Double> {
     @Override
     public Double scrape(Page page) {
         try {
-            page.navigate(URL, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
-            String val = page.locator(".series-meta-observation-value").first().innerText();
+            logger.debug("[FRED] Navigating to {}...", URL);
+            page.navigate(URL, new Page.NavigateOptions()
+                    .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
+                    .setTimeout(60000));
+            
+            logger.debug("[FRED] Waiting for observation value...");
+            String val = page.locator(".series-meta-observation-value").first()
+                    .innerText(new com.microsoft.playwright.Locator.InnerTextOptions().setTimeout(30000));
+            
+            logger.info("[FRED] Successfully scraped yield spread: {}", val);
             return Double.parseDouble(val.trim());
         } catch (Exception e) {
-            logger.error("[FRED] Failed to scrape yield spread from {}: {}", URL, e.getMessage(), e);
+            logger.error("[FRED] Failed to scrape yield spread from {}: {}", URL, e.getMessage());
             return null;
         }
     }

@@ -139,7 +139,8 @@ public class MacroMetricsService {
     }
 
     private void fetchAndStoreYahooHistory(String symbol, long start, long end) throws Exception {
-        String url = String.format("https://query1.finance.yahoo.com/v8/finance/chart/%s?period1=%d&period2=%d&interval=1wk", symbol, start, end);
+        String encodedSymbol = java.net.URLEncoder.encode(symbol, java.nio.charset.StandardCharsets.UTF_8);
+        String url = String.format("https://query1.finance.yahoo.com/v8/finance/chart/%s?period1=%d&period2=%d&interval=1wk", encodedSymbol, start, end);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")

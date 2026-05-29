@@ -20,7 +20,7 @@ class IswExtractionDebugTest {
     @Test
     void debugIswExtraction() {
         System.out.println("--- ISW EXTRACTION DEBUG START ---");
-        List<String> links = scraperService.getIswLinks(1);
+        List<String> links = scraperService.getIswLinks(1, com.hud.briefing.BriefingCategory.THEATER_UKRAINE);
         if (links.isEmpty()) {
             System.out.println("No ISW links found.");
             return;

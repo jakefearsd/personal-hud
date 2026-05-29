@@ -62,7 +62,6 @@ public class AutomatedBriefingService {
     }
 
     @Async("briefingExecutor")
-    @Scheduled(cron = "0 0 6 * * *")
     public void generateDailyBriefing() {
         LocalDate today = LocalDate.now();
         List<DynamicLlmService.NamedChatModel> activeModels = llmService.getActiveModels();

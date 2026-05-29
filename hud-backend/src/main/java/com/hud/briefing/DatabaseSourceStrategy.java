@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 public class DatabaseSourceStrategy implements BriefingSourceStrategy {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseSourceStrategy.class);
-    private static final int ISW_FETCH_LIMIT = 15;
 
     private final NewsSourceRepository sourceRepository;
     private final PlaywrightScraperService scraperService;
@@ -44,7 +42,7 @@ public class DatabaseSourceStrategy implements BriefingSourceStrategy {
 
         List<SourceLink> aggregated = new ArrayList<>();
         for (NewsSource source : sources) {
-            for (String url : resolveUrls(source, limitPerSource)) {
+            for (String url : resolveUrls(source, limitPerSource, category)) {
                 aggregated.add(new SourceLink(url, source.getName(), source.getTier()));
             }
         }
@@ -63,7 +61,7 @@ public class DatabaseSourceStrategy implements BriefingSourceStrategy {
         return true;
     }
 
-    private List<String> resolveUrls(NewsSource source, int limit) {
+    private List<String> resolveUrls(NewsSource source, int limit, BriefingCategory category) {
         switch (source.getType()) {
             case RSS:
                 logger.info("DatabaseSourceStrategy: RSS {}", source.getName());
@@ -72,40 +70,11 @@ public class DatabaseSourceStrategy implements BriefingSourceStrategy {
                 logger.info("DatabaseSourceStrategy: CSIS {}", source.getName());
                 return scraperService.getCsisLinks(limit);
             case ISW:
-                logger.info("DatabaseSourceStrategy: ISW {} ({})", source.getName(), source.getUrl());
-                return filterIswLinks(scraperService.getIswLinks(ISW_FETCH_LIMIT),
-                        source.getUrl(), limit);
+                logger.info("DatabaseSourceStrategy: ISW {} for {}", source.getName(), category);
+                return scraperService.getIswLinks(limit, category);
             default:
                 logger.warn("Unsupported source type {} for {}", source.getType(), source.getName());
                 return List.of();
         }
-    }
-
-    /** Filters the ISW publications index by the theater keyword stored in the source url. */
-    private List<String> filterIswLinks(List<String> links, String theater, int limit) {
-        String key = theater == null ? "" : theater.trim().toLowerCase(Locale.ROOT);
-        if ("ukraine".equals(key)) {
-            List<String> filtered = links.stream()
-                    .filter(l -> l.contains("offensive-campaign-assessment"))
-                    .limit(limit)
-                    .collect(Collectors.toList());
-            if (filtered.isEmpty()) {
-                filtered = links.stream()
-                        .filter(l -> l.contains("ukraine"))
-                        .limit(limit)
-                        .collect(Collectors.toList());
-            }
-            return filtered;
-        }
-        if ("mideast".equals(key)) {
-            return links.stream()
-                    .filter(l -> l.contains("iran-update")
-                            || l.contains("israel-hamas-war")
-                            || l.contains("middle-east"))
-                    .limit(limit)
-                    .collect(Collectors.toList());
-        }
-        // "global" (and any unrecognised keyword) takes the whole ISW index, capped at the limit.
-        return links.stream().limit(limit).collect(Collectors.toList());
     }
 }

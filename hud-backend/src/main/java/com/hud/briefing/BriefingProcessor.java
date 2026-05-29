@@ -9,35 +9,36 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Template method for turning raw signal into intelligence. In Phase 2 this is
- * a transitional form: links now carry source name/tier, but the reduce stage
- * still operates on concatenated text. Task 6 replaces acquireSignal/synthesize
- * with the map-reduce pipeline.
+ * Orchestrates the intelligence pipeline: acquisition, filtering, and synthesis.
+ * Uses Strategy pattern for synthesis and Configuration for behavioral tuning.
  */
-public abstract class BriefingProcessor {
+public class BriefingProcessor {
 
-    protected static final Logger logger = LoggerFactory.getLogger(BriefingProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(BriefingProcessor.class);
 
-    protected final PlaywrightScraperService scraperService;
-    protected final ChatLanguageModel chatModel;
-    protected final BriefingSourceStrategy sourceStrategy;
-    protected final IntelligenceSynthesizer synthesizer;
-    protected final BriefingCategory category;
+    private final PlaywrightScraperService scraperService;
+    private final ChatLanguageModel chatModel;
+    private final BriefingSourceStrategy sourceStrategy;
+    private final IntelligenceSynthesizer synthesizer;
+    private final BriefingCategory category;
+    private final BriefingProcessorConfiguration config;
 
-    protected BriefingProcessor(PlaywrightScraperService scraperService,
-                                ChatLanguageModel chatModel,
-                                BriefingSourceStrategy sourceStrategy,
-                                IntelligenceSynthesizer synthesizer,
-                                BriefingCategory category) {
+    public BriefingProcessor(PlaywrightScraperService scraperService,
+                             ChatLanguageModel chatModel,
+                             BriefingSourceStrategy sourceStrategy,
+                             IntelligenceSynthesizer synthesizer,
+                             BriefingCategory category,
+                             BriefingProcessorConfiguration config) {
         this.scraperService = scraperService;
         this.chatModel = chatModel;
         this.sourceStrategy = sourceStrategy;
         this.synthesizer = synthesizer;
         this.category = category;
+        this.config = config;
     }
 
-    public final SynthesisResult process() {
-        List<SourceLink> links = sourceStrategy.getLinks(category, getLinkLimit());
+    public SynthesisResult process() {
+        List<SourceLink> links = sourceStrategy.getLinks(category, config.linkLimit());
 
         if (links.isEmpty()) {
             throw new IllegalStateException("No signal sources found for: " + category);
@@ -49,25 +50,21 @@ public abstract class BriefingProcessor {
 
         logger.info("[PIPELINE] Acquired {} characters of situational signal for {}", consolidatedSignal.length(), category);
 
-        if (consolidatedSignal.length() < getMinRequiredChars()) {
+        if (consolidatedSignal.length() < config.minRequiredChars()) {
             logger.error("[PIPELINE] ABORTING: Insufficient situational signal ({} chars) for {}. Required: {}", 
-                    consolidatedSignal.length(), category, getMinRequiredChars());
+                    consolidatedSignal.length(), category, config.minRequiredChars());
             throw new IllegalStateException("Insufficient situational signal captured.");
         }
 
-        return synthesize(consolidatedSignal);
+        return synthesizer.synthesize(chatModel, category, consolidatedSignal);
     }
 
-    protected abstract int getLinkLimit();
-    protected abstract int getMinRequiredChars();
-    protected abstract int getScrapeDepth();
-    protected abstract SynthesisResult synthesize(String rawSignal);
-
-    protected String acquireSignal(List<SourceLink> links) {
+    private String acquireSignal(List<SourceLink> links) {
         StringBuilder sb = new StringBuilder();
         int successCount = 0;
         for (SourceLink link : links) {
-            String text = scraperService.extractFullText(link.url(), getScrapeDepth());
+            logger.info("[PIPELINE] Scraping link: {}", link.url());
+            String text = scraperService.extractFullText(link.url(), config.scrapeDepth());
             if (isPlausibleContent(text, link.url())) {
                 sb.append("\n--- START SOURCE ---\n").append(text).append("\n--- END SOURCE ---\n");
                 successCount++;
@@ -79,14 +76,13 @@ public abstract class BriefingProcessor {
         return sb.toString();
     }
 
-    protected boolean isPlausibleContent(String text, String url) {
+    private boolean isPlausibleContent(String text, String url) {
         if (text == null || text.length() < 500) return false;
         String lower = text.toLowerCase(Locale.ROOT);
         boolean isAdOrCookie = lower.contains("before you continue")
                 || lower.contains("accept all cookies")
                 || url.contains("/about");
         
-        if (isAdOrCookie) return false;
-        return true;
+        return !isAdOrCookie;
     }
 }

@@ -1,5 +1,6 @@
 package com.hud.news;
 
+import com.hud.briefing.BriefingCategory;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitUntilState;
@@ -14,69 +15,56 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Service for high-level scraping operations using Playwright and native HTTP.
- * Acts as a context for various ScraperStrategies.
+ * Facade for scraping operations. Delegated to specialized components for
+ * browser management, RSS fetching, and content cleaning.
  */
 @Service
 public class PlaywrightScraperService {
 
     private static final Logger logger = LoggerFactory.getLogger(PlaywrightScraperService.class);
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36";
     private static final int MAX_VISITED_PAGES = 10;
     private static final int DEEP_CRAWL_BRANCH_LIMIT = 3;
 
-    @FunctionalInterface
-    private interface BrowserTask<T> {
-        T execute(Page page);
-    }
+    private final PlaywrightBrowserManager browserManager;
+    private final ContentCleaner contentCleaner;
+    private final RssClient rssClient;
 
-    private <T> T executeInBrowser(BrowserTask<T> task) {
-        try (Playwright playwright = Playwright.create()) {
-            try (Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true))) {
-                Browser.NewContextOptions contextOptions = new Browser.NewContextOptions()
-                        .setUserAgent(USER_AGENT)
-                        .setLocale("en-US");
-                try (BrowserContext context = browser.newContext(contextOptions);
-                     Page page = context.newPage()) {
-                    return task.execute(page);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("[PLAYWRIGHT] Error in browser task", e);
-            return null;
-        }
+    public PlaywrightScraperService(PlaywrightBrowserManager browserManager,
+                                    ContentCleaner contentCleaner,
+                                    RssClient rssClient) {
+        this.browserManager = browserManager;
+        this.contentCleaner = contentCleaner;
+        this.rssClient = rssClient;
     }
 
     public List<NewsArticle> scrapeYahooFinance() {
-        return executeInBrowser(new YahooFinanceScraperStrategy()::scrape);
+        return browserManager.executeInBrowser(new YahooFinanceScraperStrategy()::scrape);
     }
 
-    public List<String> getIswLinks(int limit) {
-        return executeInBrowser(new IswScraperStrategy(limit)::scrape);
+    public List<String> getIswLinks(int limit, BriefingCategory category) {
+        return browserManager.executeInBrowser(new IswScraperStrategy(limit, category)::scrape);
     }
 
     public List<String> getCsisLinks(int limit) {
-        return executeInBrowser(new CsisScraperStrategy(limit)::scrape);
+        return browserManager.executeInBrowser(new CsisScraperStrategy(limit)::scrape);
     }
 
     public MacroMetric scrapeYahooMetric(String ticker, String label) {
-        return executeInBrowser(new YahooMetricScraperStrategy(ticker, label)::scrape);
+        return browserManager.executeInBrowser(new YahooMetricScraperStrategy(ticker, label)::scrape);
     }
 
     public Double scrapeFredYieldSpread() {
-        return executeInBrowser(new FredYieldScraperStrategy()::scrape);
+        return browserManager.executeInBrowser(new FredYieldScraperStrategy()::scrape);
+    }
+
+    public List<String> getLinksFromRss(String rssUrl, int limit) {
+        return rssClient.getLinksFromRss(rssUrl, limit);
     }
 
     public String extractFullText(String url) {
@@ -93,13 +81,17 @@ public class PlaywrightScraperService {
 
         String targetUrl = url.replace("&amp;", "&");
         
-        String content = executeInBrowser(page -> {
+        String content = browserManager.executeInBrowser(page -> {
             try {
-                page.navigate(targetUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(45000));
+                logger.debug("[PLAYWRIGHT] Navigating to: {}", targetUrl);
+                page.navigate(targetUrl, new Page.NavigateOptions()
+                        .setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
+                        .setTimeout(45000));
+                
                 handleConsent(page);
                 handleRedirects(page);
 
-                page.waitForTimeout(2000);
+                page.waitForTimeout(1000);
                 String html = page.content();
                 
                 Readability4J readability = new Readability4J(targetUrl, html);
@@ -111,7 +103,7 @@ public class PlaywrightScraperService {
                     return "";
                 }
 
-                String cleaned = cleanExtractedText(text);
+                String cleaned = contentCleaner.clean(text);
                 StringBuilder sb = new StringBuilder(cleaned);
                 
                 if (depth > 0) {
@@ -131,23 +123,12 @@ public class PlaywrightScraperService {
     private void handleRedirects(Page page) {
         if (page.url().contains("google.com/") || page.url().contains("yahoo.com/")) {
             try { 
-                page.waitForURL(u -> !u.contains("google.com") && !u.contains("yahoo.com"), new Page.WaitForURLOptions().setTimeout(10000)); 
+                page.waitForURL(u -> !u.contains("google.com") && !u.contains("yahoo.com"), 
+                        new Page.WaitForURLOptions().setTimeout(10000)); 
             } catch (Exception e) {
                 logger.debug("[PLAYWRIGHT] Timeout waiting for redirect from {}", page.url());
             }
         }
-    }
-
-    String cleanExtractedText(String text) {
-        String cleaned = text.trim();
-        String[] markers = {"Endnotes", "Citations", "Technical Notes", "Authors:", "Related Publications", "Click here to see ISW"};
-        for (String marker : markers) {
-            int idx = cleaned.indexOf(marker);
-            if (idx > 1000) {
-                cleaned = cleaned.substring(0, idx);
-            }
-        }
-        return cleaned;
     }
 
     private void performDeepCrawl(String targetUrl, String htmlContent, int depth, Set<String> visited, StringBuilder sb) {
@@ -173,6 +154,22 @@ public class PlaywrightScraperService {
         }
     }
 
+    void handleConsent(Page page) {
+        try {
+            String[] sels = {"button:has-text('Accept all')", "button:has-text('Agree')", "button[name='agree']"};
+            for (String s : sels) {
+                var btn = page.locator(s).first();
+                if (btn.isVisible()) {
+                    btn.click();
+                    page.waitForLoadState(LoadState.DOMCONTENTLOADED);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("[PLAYWRIGHT] Could not handle consent dialog for {}: {}", page.url(), e.getMessage());
+        }
+    }
+
     String truncateContent(String content) {
         return content.length() > 2000000 ? content.substring(0, 2000000) : content.trim();
     }
@@ -190,45 +187,6 @@ public class PlaywrightScraperService {
                    !path.contains("/search") && !path.endsWith(".pdf");
         } catch (Exception e) {
             return false;
-        }
-    }
-
-    public List<String> getLinksFromRss(String rssUrl, int limit) {
-        try {
-            HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(rssUrl)).header("User-Agent", USER_AGENT).build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String body = response.body();
-
-            List<String> links = new ArrayList<>();
-            Pattern pattern = Pattern.compile("<link>(https?://[^<]+)</link>");
-            Matcher matcher = pattern.matcher(body);
-            while (matcher.find() && links.size() < limit) {
-                String link = matcher.group(1);
-                if (!link.endsWith(".xml") && !link.contains("/rss") && !link.endsWith("/news") && !links.contains(link)) {
-                    links.add(link);
-                }
-            }
-            return links;
-        } catch (Exception e) {
-            logger.error("[RSS] Failed to fetch links from {}: {}", rssUrl, e.getMessage());
-            return List.of();
-        }
-    }
-
-    private void handleConsent(Page page) {
-        try {
-            String[] sels = {"button:has-text('Accept all')", "button:has-text('Agree')", "button[name='agree']"};
-            for (String s : sels) {
-                var btn = page.locator(s).first();
-                if (btn.isVisible()) {
-                    btn.click();
-                    page.waitForLoadState(LoadState.DOMCONTENTLOADED);
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            logger.debug("[PLAYWRIGHT] Could not handle consent dialog for {}: {}", page.url(), e.getMessage());
         }
     }
 }

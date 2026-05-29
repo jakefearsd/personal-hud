@@ -116,13 +116,11 @@ interface LlmConfigFormProps {
 }
 
 const LlmConfigForm = ({ editingConfig, setEditingConfig, onSave, onReset, loading }: LlmConfigFormProps) => {
-  const geminiModels = [
-    { label: 'Gemini 3.1 Pro (Frontier / Paid Only)', value: 'gemini-3.1-pro-preview' },
-    { label: 'Gemini 3.1 Flash-Lite (Cost Optimized / Free Tier)', value: 'gemini-3.1-flash-lite-preview' },
-    { label: 'Gemini 2.5 Pro (Stable / Paid Only)', value: 'gemini-2.5-pro' },
-    { label: 'Gemini 2.5 Flash (Stable / Free Tier)', value: 'gemini-2.5-flash' },
-  ];
-
+const geminiModels = [
+  { label: 'Gemini 3.5 Flash (New / Fastest)', value: 'gemini-3.5-flash' },
+  { label: 'Gemini 3.1 Pro (Stable / Frontier)', value: 'gemini-3.1-pro' },
+  { label: 'Gemini 3.1 Flash-Lite (Stable / Efficiency)', value: 'gemini-3.1-flash-lite' },
+];
   const ollamaSuggestions = [
     { label: 'Gemma 4 (8B)', value: 'gemma4:e4b' },
     { label: 'Llama 3.1 (8B)', value: 'llama3.1:8b' },

@@ -35,29 +35,28 @@ public class ScheduledTaskMaintenanceService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 1800000) // Also check every 30 minutes
     public void checkAndCatchUp() {
-        logger.info("Verifying daily scheduled tasks...");
+        logger.info("[MAINTENANCE] Verifying daily scheduled tasks...");
 
-        // 1. Sync historical gaps always to ensure data integrity
-        logger.info("Initiating background historical data sync...");
+        // 1. Sync historical gaps
         macroMetricsService.syncHistoricalGaps();
 
         // 2. Check for missing today's briefings
         long briefingCount = briefingRepository.countByGeneratedAtAfter(LocalDate.now().atStartOfDay());
         if (briefingCount == 0) {
-            logger.info("No briefings found for today. Catching up...");
+            // Only trigger if we are past the expected early morning window (e.g. 1 AM) to avoid pre-empting the actual schedule
+            // But actually, catch-up is safest if it just ensures something exists.
+            logger.info("[MAINTENANCE] No briefings found for today ({}). Triggering recovery run.", LocalDate.now());
             briefingService.generateDailyBriefing();
-            // Note: generateDailyBriefing() will trigger generateDailyPredictions() once it finishes
         } else {
-            logger.info("Found {} briefings for today.", briefingCount);
+            logger.info("[MAINTENANCE] Found {} briefings for today.", briefingCount);
             
-            // 3. If briefings exist, check if predictions are still missing
+            // 3. Check for missing predictions
             long predictionCount = predictionRepository.countByGenerationDate(LocalDate.now());
             if (predictionCount == 0) {
-                logger.info("No market predictions found for today. Catching up...");
+                logger.info("[MAINTENANCE] No market predictions found for today. Recovering...");
                 predictionService.generateDailyPredictions();
-            } else {
-                logger.info("Found {} market predictions for today.", predictionCount);
             }
         }
     }

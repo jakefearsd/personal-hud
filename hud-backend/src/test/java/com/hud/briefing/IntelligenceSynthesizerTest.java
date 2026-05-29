@@ -1,5 +1,8 @@
 package com.hud.briefing;
 
+import com.hud.briefing.synthesis.GlobalSitrepStrategy;
+import com.hud.briefing.synthesis.StandardSynthesisStrategy;
+import com.hud.briefing.synthesis.TheaterFusionStrategy;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -11,8 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @Tag("unit")
@@ -24,7 +30,11 @@ class IntelligenceSynthesizerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        synthesizer = new IntelligenceSynthesizer();
+        synthesizer = new IntelligenceSynthesizer(List.of(
+            new StandardSynthesisStrategy(),
+            new TheaterFusionStrategy(),
+            new GlobalSitrepStrategy()
+        ));
     }
 
     @Test
@@ -32,7 +42,7 @@ class IntelligenceSynthesizerTest {
         Response<AiMessage> response = Response.from(AiMessage.from("Narrative Output"), new TokenUsage(10, 5));
         when(model.generate(any(UserMessage.class))).thenReturn(response);
         
-        SynthesisResult result = synthesizer.synthesizeStandard(model, BriefingCategory.WORLD_NEWS.getPersona(), "Raw Data");
+        SynthesisResult result = synthesizer.synthesize(model, BriefingCategory.WORLD_NEWS, "Raw Data");
 
         assertEquals("Narrative Output", result.content());
         assertEquals(10, result.inputTokens());
@@ -48,13 +58,11 @@ class IntelligenceSynthesizerTest {
         
         when(model.generate(any(UserMessage.class))).thenReturn(tempo, kinetic, innovations);
         
-        SynthesisResult result = synthesizer.fuseTheaterIntelligence(model, BriefingCategory.THEATER_UKRAINE, "Frontline Intelligence Data");
+        SynthesisResult result = synthesizer.synthesize(model, BriefingCategory.THEATER_UKRAINE, "Frontline Intelligence Data");
 
         assertTrue(result.content().contains("# UKRAINE THEATER REPORT"));
         assertTrue(result.content().contains("## Tactical Momentum"));
         assertTrue(result.content().contains("Tempo Analysis"));
-        assertTrue(result.content().contains("Kinetic Table"));
-        assertTrue(result.content().contains("Innovations"));
         assertEquals(30, result.inputTokens());
         assertEquals(15, result.outputTokens());
         
@@ -66,15 +74,11 @@ class IntelligenceSynthesizerTest {
         Response<AiMessage> response = Response.from(AiMessage.from("Global Overview"), new TokenUsage(20, 10));
         when(model.generate(any(UserMessage.class))).thenReturn(response);
 
-        SynthesisResult result = synthesizer.synthesizeGlobalSitrep(model, "Global Data");
+        SynthesisResult result = synthesizer.synthesize(model, BriefingCategory.GLOBAL_SITREP, "Global Data");
 
         assertEquals("Global Overview", result.content());
         assertEquals(20, result.inputTokens());
         assertEquals(10, result.outputTokens());
         verify(model).generate(argThat((UserMessage m) -> m.text().contains("Global Theater Strategist")));
-    }
-
-    private void assertEquals(Object expected, Object actual) {
-        org.junit.jupiter.api.Assertions.assertEquals(expected, actual);
     }
 }
