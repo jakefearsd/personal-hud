@@ -57,9 +57,9 @@ export const BriefingView = ({ briefings, loading, type, onTrigger }: Props) => 
         </Card>
       )}
 
-      <div className="briefing-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredBriefings.map((b) => (
-          <Card key={b.id} className="overflow-hidden border-border/60 bg-card/60 backdrop-blur-md transition-all hover:border-accent/80 group">
+          <Card key={b.id} className="flex flex-col h-full overflow-hidden border-border/60 bg-card/60 backdrop-blur-md transition-all hover:border-accent/80 group">
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4 border-b border-border/50 bg-muted/20">
               <div className="space-y-1">
                 <CardTitle className="text-[11px] font-mono font-bold uppercase tracking-widest text-accent group-hover:text-[#79c0ff] transition-colors">
@@ -76,7 +76,7 @@ export const BriefingView = ({ briefings, loading, type, onTrigger }: Props) => 
                 </Badge>
               )}
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 flex-1">
               <div className="markdown-body prose dark:prose-invert max-w-none prose-sm leading-relaxed">
                 {b.htmlContent ? (
                   <div dangerouslySetInnerHTML={{ __html: b.htmlContent }} />
