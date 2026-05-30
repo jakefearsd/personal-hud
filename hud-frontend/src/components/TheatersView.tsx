@@ -21,6 +21,9 @@ export function TheatersView({ briefings, loading, onTrigger }: TheatersViewProp
           <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold">12</div>
             <p className="text-xs text-muted-foreground">+2 since last hour</p>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed border-t border-border/50 pt-2">
+              Regions flagged for high geopolitical tension or active conflict requiring ongoing monitoring.
+            </p>
           </CardContent>
         </Card>
         
@@ -32,6 +35,9 @@ export function TheatersView({ briefings, loading, onTrigger }: TheatersViewProp
           <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold">98.5%</div>
             <p className="text-xs text-muted-foreground">Optimal operational capacity</p>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed border-t border-border/50 pt-2">
+              Overall health and uptime of the data collection, processing, and LLM inference pipelines.
+            </p>
           </CardContent>
         </Card>
 
@@ -43,6 +49,9 @@ export function TheatersView({ briefings, loading, onTrigger }: TheatersViewProp
           <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold">4</div>
             <p className="text-xs text-muted-foreground">Unchanged across regions</p>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed border-t border-border/50 pt-2">
+              Number of automated intelligence-gathering agents or specialized LLMs currently deployed.
+            </p>
           </CardContent>
         </Card>
 
@@ -54,6 +63,9 @@ export function TheatersView({ briefings, loading, onTrigger }: TheatersViewProp
           <CardContent className="p-4 pt-0">
             <div className="text-2xl font-bold">84</div>
             <p className="text-xs text-muted-foreground">12 new sources connected</p>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed border-t border-border/50 pt-2">
+              Live news, financial feeds, and API data sources actively being ingested and analyzed.
+            </p>
           </CardContent>
         </Card>
       </div>
