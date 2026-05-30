@@ -24,10 +24,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, PasswordChangeFilter passwordChangeFilter) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, PasswordChangeFilter passwordChangeFilter, CsrfCookieFilter csrfCookieFilter) throws Exception {
         http
             .addFilterAfter(passwordChangeFilter, UsernamePasswordAuthenticationFilter.class)
-            .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+            .addFilterAfter(csrfCookieFilter, org.springframework.security.web.authentication.www.BasicAuthenticationFilter.class)
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler())
+            )
             .authorizeHttpRequests(auth -> auth
                 // Public Endpoints & Static Resources
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg").permitAll()
