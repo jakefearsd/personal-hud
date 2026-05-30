@@ -10,6 +10,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ScheduledTaskMaintenanceService {
@@ -21,17 +23,36 @@ public class ScheduledTaskMaintenanceService {
     private final MacroMetricsService macroMetricsService;
     private final DailyBriefingRepository briefingRepository;
     private final MarketPredictionRepository predictionRepository;
+    private final PipelineRunRepository pipelineRunRepository;
 
     public ScheduledTaskMaintenanceService(AutomatedBriefingService briefingService,
                                            PredictionService predictionService,
                                            MacroMetricsService macroMetricsService,
                                            DailyBriefingRepository briefingRepository,
-                                           MarketPredictionRepository predictionRepository) {
+                                           MarketPredictionRepository predictionRepository,
+                                           PipelineRunRepository pipelineRunRepository) {
         this.briefingService = briefingService;
         this.predictionService = predictionService;
         this.macroMetricsService = macroMetricsService;
         this.briefingRepository = briefingRepository;
         this.predictionRepository = predictionRepository;
+        this.pipelineRunRepository = pipelineRunRepository;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void cleanupOrphanedRunsOnStartup() {
+        logger.info("[MAINTENANCE] Cleaning up any orphaned pipeline runs from previous termination...");
+        List<PipelineRun> pendingRuns = pipelineRunRepository.findByStatus(PipelineStatus.PENDING);
+        for (PipelineRun run : pendingRuns) {
+            run.setStatus(PipelineStatus.FAILED);
+            run.setEndTime(LocalDateTime.now());
+            run.setErrorMessage("Server restarted during execution");
+            run.setErrorDetail("The application container was stopped or restarted while this pipeline run was processing.");
+            pipelineRunRepository.save(run);
+        }
+        if (!pendingRuns.isEmpty()) {
+            logger.info("[MAINTENANCE] Cleaned up {} orphaned runs.", pendingRuns.size());
+        }
     }
 
     @EventListener(ApplicationReadyEvent.class)
