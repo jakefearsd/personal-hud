@@ -4,6 +4,8 @@ import com.hud.briefing.DailyBriefing;
 import com.hud.briefing.DailyBriefingRepository;
 import com.hud.briefing.DynamicLlmService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,6 +13,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class MacroSentimentService {
+
+    private static final Logger log = LoggerFactory.getLogger(MacroSentimentService.class);
 
     private final DynamicLlmService llmService;
     private final DailyBriefingRepository briefingRepository;
@@ -29,6 +33,10 @@ public class MacroSentimentService {
         ChatLanguageModel chatModel = activeModels.get(0).model();
 
         List<DailyBriefing> recentBriefings = briefingRepository.findLatestGlobal();
+        if (recentBriefings.isEmpty()) {
+            return "Insufficient recent news data to generate sentiment.";
+        }
+
         String newsContext = recentBriefings.stream()
                 .map(DailyBriefing::getMarkdownContent)
                 .collect(Collectors.joining("\n---\n"));
@@ -40,6 +48,7 @@ public class MacroSentimentService {
         try {
             return chatModel.generate(prompt);
         } catch (Exception e) {
+            log.error("Failed to generate pod sentiment", e);
             return "Sentiment analysis temporarily unavailable due to LLM provider error.";
         }
     }
