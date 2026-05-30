@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
 import { BriefingView } from './components/BriefingView'
+import { TheatersView } from './components/TheatersView'
 import { ObservabilityView } from './components/ObservabilityView'
 import { ConfigView } from './components/ConfigView'
 import { InvestmentsView } from './components/InvestmentsView'
@@ -239,9 +240,8 @@ function App() {
             } />
 
             <Route path="/theaters" element={
-              <BriefingView 
+              <TheatersView 
                 briefings={briefings} 
-                type="theater"
                 loading={loading} 
                 onTrigger={isAdmin ? triggerBriefing : undefined} 
               />
