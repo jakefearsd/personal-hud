@@ -1,4 +1,4 @@
-# HUD Project Instructions
+# HUD Project Instructions (Antigravity)
 
 ## Architecture & Conventions
 - **Multi-module Maven**: The project is split into `hud-backend` (Spring Boot) and `hud-frontend` (React/Vite).

@@ -59,3 +59,6 @@ bootstrap_*.sql
 
 # Local session cookies
 cookies.txt
+
+# Antigravity CLI workspace state
+.antigravitycli/
