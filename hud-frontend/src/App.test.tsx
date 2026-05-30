@@ -60,8 +60,8 @@ describe('HUD Intelligence Dashboard', () => {
     expect(providerTrigger).toBeInTheDocument();
     
     // Check for sub-sections
-    expect(screen.getByText(/Neural Parameters/i)).toBeInTheDocument();
-    expect(screen.getByText(/Security Protocol/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Neural Parameters/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Security Protocol/i)[0]).toBeInTheDocument();
   });
 
   it('toggles dark/light mode', async () => {

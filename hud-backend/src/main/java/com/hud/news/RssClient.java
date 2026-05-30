@@ -25,9 +25,11 @@ public class RssClient {
     private final HttpClient httpClient;
 
     public RssClient() {
-        this.httpClient = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.ALWAYS)
-                .build();
+        this(HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build());
+    }
+
+    public RssClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     public List<String> getLinksFromRss(String rssUrl, int limit) {

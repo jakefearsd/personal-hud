@@ -17,11 +17,18 @@ public class YahooMetricScraperStrategy implements ScraperStrategy<MacroMetric> 
     private static final Logger logger = LoggerFactory.getLogger(YahooMetricScraperStrategy.class);
     private final String ticker;
     private final String label;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
+    private final HttpClient httpClient;
 
     public YahooMetricScraperStrategy(String ticker, String label) {
+        this(ticker, label, HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build(), new ObjectMapper());
+    }
+
+    public YahooMetricScraperStrategy(String ticker, String label, HttpClient httpClient, ObjectMapper mapper) {
         this.ticker = ticker;
         this.label = label;
+        this.httpClient = httpClient;
+        this.mapper = mapper;
     }
 
     @Override
@@ -34,13 +41,12 @@ public class YahooMetricScraperStrategy implements ScraperStrategy<MacroMetric> 
     public MacroMetric scrape(Page page) {
         // PREFERRED: Yahoo Chart JSON API
         try {
-            HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(getUrl()))
                     .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
                     .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 JsonNode root = mapper.readTree(response.body());
                 JsonNode resultNode = root.path("chart").path("result").get(0);

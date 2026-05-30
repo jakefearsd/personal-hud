@@ -24,9 +24,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, PasswordChangeFilter passwordChangeFilter) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            .addFilterAfter(passwordChangeFilter, UsernamePasswordAuthenticationFilter.class)
+            .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
             .authorizeHttpRequests(auth -> auth
                 // Public Endpoints & Static Resources
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.svg").permitAll()

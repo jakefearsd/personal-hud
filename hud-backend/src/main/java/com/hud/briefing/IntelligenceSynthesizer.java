@@ -32,10 +32,4 @@ public class IntelligenceSynthesizer {
         return strategy.synthesize(model, category, rawData);
     }
 
-    private BriefingCategory findCategoryForPersona(BriefingPersona persona) {
-        for (BriefingCategory c : BriefingCategory.values()) {
-            if (c.getPersona() == persona) return c;
-        }
-        return BriefingCategory.WORLD_NEWS; // Fallback
-    }
 }
