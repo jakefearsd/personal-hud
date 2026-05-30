@@ -1,5 +1,7 @@
 package com.hud.news;
 
+import java.util.Objects;
+
 public class MacroPodMetric {
     private String ticker;
     private String label;
@@ -29,4 +31,32 @@ public class MacroPodMetric {
     public void setHistoricalPercentile(double historicalPercentile) { this.historicalPercentile = historicalPercentile; }
     public double getChangePercent() { return changePercent; }
     public void setChangePercent(double changePercent) { this.changePercent = changePercent; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MacroPodMetric that = (MacroPodMetric) o;
+        return Double.compare(that.currentValue, currentValue) == 0 &&
+               Double.compare(that.historicalPercentile, historicalPercentile) == 0 &&
+               Double.compare(that.changePercent, changePercent) == 0 &&
+               Objects.equals(ticker, that.ticker) &&
+               Objects.equals(label, that.label);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ticker, label, currentValue, historicalPercentile, changePercent);
+    }
+
+    @Override
+    public String toString() {
+        return "MacroPodMetric{" +
+                "ticker='" + ticker + '\'' +
+                ", label='" + label + '\'' +
+                ", currentValue=" + currentValue +
+                ", historicalPercentile=" + historicalPercentile +
+                ", changePercent=" + changePercent +
+                '}';
+    }
 }
