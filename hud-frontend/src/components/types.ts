@@ -82,3 +82,18 @@ export interface MarketPrediction {
   confidenceScore: number;
   tailRisk: string;
 }
+
+export interface MacroPodMetric {
+  ticker: string;
+  label: string;
+  currentValue: number;
+  historicalPercentile: number;
+  changePercent: number;
+}
+
+export interface MacroPod {
+  id: string;
+  title: string;
+  sentimentNarrative: string;
+  metrics: MacroPodMetric[];
+}
