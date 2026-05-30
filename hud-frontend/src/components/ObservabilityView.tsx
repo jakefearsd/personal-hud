@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import type { PipelineRun } from './types';
-import { Activity, CheckCircle, AlertCircle, Clock, RefreshCcw, Trash2 } from 'lucide-react';
+import { Activity, CheckCircle, AlertCircle, RefreshCcw, Trash2, Cpu } from 'lucide-react';
 import { apiFetch } from '../api';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export const ObservabilityView = () => {
   const [runs, setRuns] = useState<PipelineRun[]>([]);
@@ -74,96 +85,113 @@ export const ObservabilityView = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (!Array.isArray(runs) && !loading) {
-    return (
-      <div className="observability-view error-state">
-        <div className="empty-state">
-          <AlertCircle size={48} />
-          <p>Failed to load pipeline data. Please refresh.</p>
-          <button className="trigger-btn" onClick={fetchRuns}>Retry</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="observability-view">
-      <div className="view-header">
-        <h2>Pipeline Observability</h2>
-        <div className="header-actions">
-          <button className="trigger-btn secondary" onClick={flushRuns} disabled={loading || !runs || runs.length === 0}>
-            <Trash2 size={16} />
+    <div className="flex flex-col gap-8 w-full">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Pipeline Observability</h2>
+          <p className="text-sm text-muted-foreground">Real-time status of intelligence acquisition and synthesis cycles.</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" size="sm" className="gap-2 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive" onClick={flushRuns} disabled={loading || !runs || runs.length === 0}>
+            <Trash2 className="h-4 w-4" />
             Flush Logs
-          </button>
-          <button className="trigger-btn" onClick={fetchRuns} disabled={loading}>
-            <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
+          </Button>
+          <Button variant="secondary" size="sm" className="gap-2" onClick={fetchRuns} disabled={loading}>
+            <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="pipeline-table-container">
-        <table className="pipeline-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Started</th>
-              <th>Duration</th>
-              <th>Details / Errors</th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card className="border-border/50 bg-card/50 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/30">
+              <TableHead className="font-mono text-[10px] uppercase tracking-wider">Category</TableHead>
+              <TableHead className="font-mono text-[10px] uppercase tracking-wider">Status</TableHead>
+              <TableHead className="font-mono text-[10px] uppercase tracking-wider">Neural Node</TableHead>
+              <TableHead className="font-mono text-[10px] uppercase tracking-wider">Started</TableHead>
+              <TableHead className="font-mono text-[10px] uppercase tracking-wider">Duration</TableHead>
+              <TableHead className="font-mono text-[10px] uppercase tracking-wider">Telemetry / Payload</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {runs.map(run => (
-              <tr key={run.id} className={`status-${run.status?.toLowerCase() || 'unknown'}`}>
-                <td className="col-category">{run.category || 'N/A'}</td>
-                <td className="col-status">
-                  <div className="status-badge">
-                    {run.status === 'PENDING' && <Activity size={14} className="animate-pulse" />}
-                    {run.status === 'SUCCESS' && <CheckCircle size={14} />}
-                    {run.status === 'FAILED' && <AlertCircle size={14} />}
-                    {run.status || 'UNKNOWN'}
+              <TableRow key={run.id} className="hover:bg-muted/20 transition-colors border-border/50">
+                <TableCell className="py-4">
+                  <span className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                    {run.category?.replace('_', ' ') || 'N/A'}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+                    {run.status === 'PENDING' && <Activity className="h-3.5 w-3.5 animate-pulse text-yellow-400" />}
+                    {run.status === 'SUCCESS' && <CheckCircle className="h-3.5 w-3.5 text-success" />}
+                    {run.status === 'FAILED' && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+                    <span className={
+                      run.status === 'SUCCESS' ? 'text-success' : 
+                      run.status === 'FAILED' ? 'text-destructive' : 
+                      'text-yellow-400'
+                    }>
+                      {run.status || 'UNKNOWN'}
+                    </span>
                   </div>
-                </td>
-                <td className="col-time">
-                  <Clock size={12} /> {formatTimestamp(run.startTime)}
-                </td>
-                <td className="col-duration">
+                </TableCell>
+                <TableCell className="text-[11px] font-mono text-foreground whitespace-nowrap">
+                   <div className="flex items-center gap-1.5">
+                     <Cpu className="h-3.5 w-3.5 text-accent" />
+                     {run.modelName || 'Neural Engine'}
+                   </div>
+                </TableCell>
+                <TableCell className="text-[11px] font-mono text-foreground whitespace-nowrap">
+                   {formatTimestamp(run.startTime)}
+                </TableCell>
+                <TableCell className="text-[11px] font-mono text-foreground font-semibold">
                    {calculateDuration(run.startTime, run.endTime)}
-                </td>
-                <td className="col-error">
+                </TableCell>
+                <TableCell>
                   {run.errorMessage && (
-                    <div className="error-container">
-                      <span className="error-text">{run.errorMessage}</span>
+                    <div className="space-y-2">
+                      <div className="text-[11px] text-destructive font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        {run.errorMessage}
+                      </div>
                       {run.errorDetail && (
-                        <pre className="error-detail">
-                          {run.errorDetail}
-                        </pre>
+                        <div className="max-h-32 overflow-y-auto bg-black/60 p-3 rounded border border-destructive/30 shadow-inner">
+                          <pre className="text-[11px] leading-relaxed font-mono text-white/90 break-all whitespace-pre-wrap">
+                            {run.errorDetail}
+                          </pre>
+                        </div>
                       )}
                     </div>
                   )}
                   {!run.errorMessage && run.status === 'SUCCESS' && (
-                    <span className="success-text">
+                    <div className="flex items-center gap-3 text-[11px] font-mono text-foreground">
                       {run.inputTokens != null && run.outputTokens != null ? (
-                        <span className="token-metrics">
-                          In: {run.inputTokens.toLocaleString()} | Out: {run.outputTokens.toLocaleString()} tokens
-                        </span>
+                        <>
+                          <Badge variant="outline" className="border-border bg-muted/40 text-white font-bold">IN: {run.inputTokens.toLocaleString()}</Badge>
+                          <Badge variant="outline" className="border-border bg-muted/40 text-white font-bold">OUT: {run.outputTokens.toLocaleString()}</Badge>
+                        </>
                       ) : (
-                        "Nominal completion"
+                        <span className="italic text-muted-foreground font-medium">Nominal completion</span>
                       )}
-                    </span>
+                    </div>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {runs.length === 0 && !loading && (
-               <tr>
-                 <td colSpan={5} className="empty-row">No pipeline runs found.</td>
-               </tr>
+               <TableRow>
+                 <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                    No pipeline cycles detected in current horizon.
+                 </TableCell>
+               </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 };
+

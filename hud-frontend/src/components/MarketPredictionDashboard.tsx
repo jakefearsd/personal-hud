@@ -118,7 +118,7 @@ export const MarketPredictionDashboard = () => {
   };
 
   return (
-    <div className="market-prediction-dashboard">
+    <div className="market-prediction-dashboard" data-testid="prediction-dashboard">
       <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <BrainCircuit size={20} color="var(--accent-color)" />

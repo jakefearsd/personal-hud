@@ -7,8 +7,9 @@ import { InvestmentsView } from './components/InvestmentsView'
 import { LoginView } from './components/LoginView'
 import { ChangePasswordView } from './components/ChangePasswordView'
 import type { DailyBriefing, LlmConfig } from './components/types'
-import { User, LogOut } from 'lucide-react'
+import { User, LogOut, Activity } from 'lucide-react'
 import { apiFetch } from './api'
+import { ModeToggle } from './components/mode-toggle'
 import './App.css'
 
 interface NewsArticle {
@@ -52,7 +53,7 @@ function App() {
           setConfigs(data)
           const active = data.find((c: any) => c.active)
           if (active && !selectedModel) {
-            const providerPrefix = active.provider === 'GEMINI' ? 'Cloud' : 'Local';
+            const providerPrefix = (active.provider === 'GEMINI' || active.provider === 'DEEPSEEK') ? 'Cloud' : 'Local';
             setSelectedModel(`${providerPrefix}: ${active.name} [${active.modelName}]`)
           }
         }
@@ -176,8 +177,9 @@ function App() {
             <div className="model-switcher">
               <label>Brain:</label>
               <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
+                <option value="global">Global Context</option>
                 {configs.map(c => {
-                   const providerPrefix = c.provider === 'GEMINI' ? 'Cloud' : 'Local';
+                   const providerPrefix = (c.provider === 'GEMINI' || c.provider === 'DEEPSEEK') ? 'Cloud' : 'Local';
                    const fullName = `${providerPrefix}: ${c.name} [${c.modelName}]`;
                    return <option key={c.id} value={fullName}>{fullName}</option>;
                 })}
@@ -203,6 +205,8 @@ function App() {
               <NavLink to="/news/live">Live</NavLink>
             </nav>
           )}
+
+          <ModeToggle />
         </div>
       </header>
 
@@ -254,7 +258,12 @@ function App() {
           </Routes>
         </div>
 
-        {loading && <div className="global-loader-overlay">Fusing intelligence...</div>}
+        {loading && (
+          <div className="global-loader-overlay">
+            <Activity className="h-5 w-5 animate-spin" />
+            Fusing intelligence...
+          </div>
+        )}
         
         {showLogin && (
           <LoginView 
@@ -264,7 +273,7 @@ function App() {
         )}
       </main>
     </div>
-  )
+  );
 }
 
 export default App

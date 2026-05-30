@@ -1,56 +1,115 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { expect, test, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { ThemeProvider } from './components/theme-provider';
 
-test('renders strategic briefings on default theaters tab', async () => {
-  const mockBriefings = [
-    { id: 1, generatedAt: '2026-05-02T12:00:00', category: 'THEATER_UKRAINE', markdownContent: '## Tactical Update\nBakhmut sector stabilization.' }
-  ];
-
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve(mockBriefings),
-  }));
-
-  render(
-    <MemoryRouter>
-      <App />
-    </MemoryRouter>
+const renderApp = () => {
+  return render(
+    <ThemeProvider defaultTheme="dark" storageKey="hud-ui-theme-test">
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ThemeProvider>
   );
+};
 
-  await waitFor(() => {
-    expect(screen.getByText('European Theater: Ukraine')).toBeInTheDocument();
-    expect(screen.getByText(/Bakhmut sector stabilization/i)).toBeInTheDocument();
+describe('HUD Intelligence Dashboard', () => {
+  it('renders and defaults to the Theaters view', async () => {
+    renderApp();
+    
+    // Check for Dashboard title
+    expect(await screen.findByText(/Theater Intelligence/i)).toBeInTheDocument();
+    
+    // Verify MSW data is rendered in a shadcn Card
+    expect(await screen.findByText(/Ukraine status update/i)).toBeInTheDocument();
+    expect(screen.getByText(/European Theater: Ukraine/i)).toBeInTheDocument();
   });
-});
 
-test('renders financial news articles on Live sub-tab of News', async () => {
-  const mockArticles = [
-    { title: 'Market Rally Continues', url: 'https://finance.yahoo.com/news/1' }
-  ];
+  it('navigates to Investments view and shows macro vitals', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    
+    const navLink = await screen.findByRole('link', { name: /Investments/i });
+    await user.click(navLink);
+    
+    expect(await screen.findByText(/Macro Vitals Dashboard/i)).toBeInTheDocument();
+    
+    // Use testId to isolate the vitals grid
+    const vitalsGrid = await screen.findByTestId('vitals-grid');
+    expect(within(vitalsGrid).getByText(/^S&P 500$/i)).toBeInTheDocument();
+    expect(within(vitalsGrid).getByText(/5,200.50/)).toBeInTheDocument();
+    
+    // Use testId to isolate the prediction dashboard
+    const predDashboard = await screen.findByTestId('prediction-dashboard');
+    expect(within(predDashboard).getByText(/Bullish momentum/i)).toBeInTheDocument();
+  });
 
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve(mockArticles),
-  }));
+  it('navigates to Config view and interacts with the Brain form', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    
+    const navLink = await screen.findByRole('link', { name: /Config/i });
+    await user.click(navLink);
+    
+    expect(await screen.findByText(/Integrate New Brain/i)).toBeInTheDocument();
+    
+    // Just verify the provider trigger exists for now, as portal interaction in JSDOM is brittle
+    const providerTrigger = screen.getByLabelText(/Intelligence Provider/i);
+    expect(providerTrigger).toBeInTheDocument();
+    
+    // Check for sub-sections
+    expect(screen.getByText(/Neural Parameters/i)).toBeInTheDocument();
+    expect(screen.getByText(/Security Protocol/i)).toBeInTheDocument();
+  });
 
-  render(
-    <MemoryRouter>
-      <App />
-    </MemoryRouter>
-  );
+  it('toggles dark/light mode', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    
+    // Check initial state (default dark)
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    
+    const modeTrigger = screen.getByRole('button', { name: /Toggle theme/i });
+    await user.click(modeTrigger);
+    
+    const lightOption = await screen.findByText(/Light/i);
+    await user.click(lightOption);
+    
+    expect(document.documentElement.classList.contains('light')).toBe(true);
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
 
-  // Switch to News tab
-  const newsTab = screen.getByText(/News/i);
-  fireEvent.click(newsTab);
+  it('handles authentication flow: login and logout', async () => {
+    const user = userEvent.setup();
+    renderApp();
 
-  // Switch to Live sub-tab
-  const liveTab = screen.getByText(/Live/i);
-  fireEvent.click(liveTab);
+    // Wait for async auth status fetch to complete and render the username
+    const usernameElement = await screen.findByText(/^admin$/i);
+    expect(usernameElement).toBeInTheDocument();
 
-  // Should eventually show the articles
-  await waitFor(() => {
-    expect(screen.getByText('Market Rally Continues')).toBeInTheDocument();
+    // Test Logout
+    const logoutBtn = screen.getByTitle(/Logout/i);
+    await user.click(logoutBtn);
+
+    // Verify it triggers the logout (we can check if the login button reappears)
+    expect(await screen.findByRole('button', { name: /Login/i })).toBeInTheDocument();
+  });
+
+  it('triggers a briefing refresh and shows loading state', async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    const refreshBtn = await screen.findByRole('button', { name: /Refresh Briefing/i });
+    await user.click(refreshBtn);
+
+    // Check for "Generating..." text or spin state if possible
+    expect(screen.getByText(/Generating.../i)).toBeInTheDocument();
+    
+    // Wait for it to finish (MSW mock is fast)
+    await waitFor(() => {
+      expect(screen.queryByText(/Generating.../i)).not.toBeInTheDocument();
+    });
   });
 });

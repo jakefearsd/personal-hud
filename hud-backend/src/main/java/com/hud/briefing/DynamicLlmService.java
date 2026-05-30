@@ -32,7 +32,7 @@ public class DynamicLlmService {
     }
 
     public NamedChatModel buildSpecificModel(LlmConfig config) {
-        String providerType = config.getProvider() == LlmProvider.GEMINI ? "Cloud" : "Local";
+        String providerType = (config.getProvider() == LlmProvider.GEMINI || config.getProvider() == LlmProvider.DEEPSEEK) ? "Cloud" : "Local";
         String descriptiveName = providerType + ": " + config.getName() + " [" + config.getModelName() + "]";
         return new NamedChatModel(
                 descriptiveName, 

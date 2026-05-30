@@ -17,7 +17,7 @@ export interface DailyBriefing {
 }
 
 export type PipelineStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
-export type LlmProvider = 'OLLAMA' | 'GEMINI';
+export type LlmProvider = 'OLLAMA' | 'GEMINI' | 'DEEPSEEK';
 
 export interface LlmConfig {
   id?: number;
@@ -41,6 +41,7 @@ export interface PipelineRun {
   errorDetail: string | null;
   inputTokens?: number;
   outputTokens?: number;
+  modelName?: string;
 }
 
 export interface MacroMetric {
