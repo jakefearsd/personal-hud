@@ -148,35 +148,35 @@ function App() {
 
   if (isAuthenticated && passwordChangeRequired) {
     return (
-      <div className="app-container">
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <ChangePasswordView onChanged={() => { setPasswordChangeRequired(false); fetchAuthStatus() }} />
       </div>
     )
   }
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="header-left">
-          <h1>HUD</h1>
-          <nav className="main-tabs">
-            <NavLink to="/news">News</NavLink>
-            <NavLink to="/theaters">Theaters</NavLink>
-            <NavLink to="/investments">Investments</NavLink>
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-64 border-r bg-card flex flex-col justify-between">
+        <div className="p-4">
+          <h1 className="text-xl font-bold mb-6 text-primary tracking-tight">HUD</h1>
+          <nav className="space-y-1 flex flex-col">
+            <NavLink to="/news" className={({isActive}) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}>News</NavLink>
+            <NavLink to="/theaters" className={({isActive}) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}>Theaters</NavLink>
+            <NavLink to="/investments" className={({isActive}) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}>Investments</NavLink>
             {isAdmin && (
               <>
-                <NavLink to="/config">Config</NavLink>
-                <NavLink to="/observability">Observability</NavLink>
+                <NavLink to="/config" className={({isActive}) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}>Config</NavLink>
+                <NavLink to="/observability" className={({isActive}) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}>Observability</NavLink>
               </>
             )}
           </nav>
         </div>
-        
-        <div className="header-right">
+        <div className="p-4 border-t space-y-4">
           {showModelSwitcher && (
-            <div className="model-switcher">
-              <label>Brain:</label>
-              <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
+            <div className="flex flex-col space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brain</label>
+              <select className="text-sm bg-secondary border-none rounded p-1" value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
                 <option value="global">Global Context</option>
                 {configs.map(c => {
                    const providerPrefix = (c.provider === 'GEMINI' || c.provider === 'DEEPSEEK') ? 'Cloud' : 'Local';
@@ -186,34 +186,33 @@ function App() {
               </select>
             </div>
           )}
-          
-          <div className="auth-controls">
+          <div className="flex items-center justify-between">
             {isAuthenticated ? (
-              <div className="user-info">
-                <User size={16} color="#58a6ff" />
-                <span className="username">{username}</span>
-                <button className="icon-btn" onClick={handleLogout} title="Logout"><LogOut size={16}/></button>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <User size={14} className="text-primary" />
+                <span>{username}</span>
+                <button onClick={handleLogout} title="Logout" className="hover:text-foreground"><LogOut size={14}/></button>
               </div>
             ) : (
-              <button className="login-trigger-btn" onClick={() => setShowLogin(true)}>Admin Login</button>
+              <button className="text-sm text-muted-foreground hover:text-foreground" onClick={() => setShowLogin(true)}>Admin Login</button>
             )}
+            <ModeToggle />
           </div>
-
-          {showSubTabs && (
-            <nav className="sub-tabs">
-              <NavLink to="/news/briefing">Briefing</NavLink>
-              <NavLink to="/news/live">Live</NavLink>
-            </nav>
-          )}
-
-          <ModeToggle />
         </div>
-      </header>
+      </aside>
 
-      <main className="app-content">
-        {error && <div className="error-banner">Error: {error}</div>}
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-background">
+        {/* Sub-tabs Top Bar if needed */}
+        {showSubTabs && (
+          <header className="h-14 border-b bg-card/50 backdrop-blur flex items-center px-6 gap-4">
+            <NavLink to="/news/briefing" className={({isActive}) => `text-sm font-medium ${isActive ? 'text-primary border-b-2 border-primary h-full flex items-center' : 'text-muted-foreground hover:text-foreground'}`}>Briefing</NavLink>
+            <NavLink to="/news/live" className={({isActive}) => `text-sm font-medium ${isActive ? 'text-primary border-b-2 border-primary h-full flex items-center' : 'text-muted-foreground hover:text-foreground'}`}>Live</NavLink>
+          </header>
+        )}
         
-        <div className={`content-wrapper ${loading ? 'is-loading' : ''}`}>
+        <div className="flex-1 overflow-auto p-6 relative">
+          {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-4">Error: {error}</div>}
           <Routes>
             <Route path="/" element={<Navigate to="/theaters" replace />} />
             
@@ -257,21 +256,21 @@ function App() {
             <Route path="*" element={<Navigate to="/theaters" replace />} />
           </Routes>
         </div>
-
-        {loading && (
-          <div className="global-loader-overlay">
-            <Activity className="h-5 w-5 animate-spin" />
-            Fusing intelligence...
-          </div>
-        )}
-        
-        {showLogin && (
-          <LoginView 
-            onLoginSuccess={() => { fetchAuthStatus(); setShowLogin(false); }} 
-            onCancel={() => setShowLogin(false)} 
-          />
-        )}
       </main>
+      
+      {loading && (
+        <div className="fixed bottom-8 right-8 bg-card/95 backdrop-blur text-primary px-7 py-4 rounded-full font-bold shadow-2xl z-50 flex items-center gap-3 border border-primary/40 font-mono text-sm tracking-wide uppercase">
+          <Activity className="h-5 w-5 animate-spin" />
+          Fusing intelligence...
+        </div>
+      )}
+      
+      {showLogin && (
+        <LoginView 
+          onLoginSuccess={() => { fetchAuthStatus(); setShowLogin(false); }} 
+          onCancel={() => setShowLogin(false)} 
+        />
+      )}
     </div>
   );
 }
