@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/news/**", "/theaters", "/investments", "/config", "/observability").permitAll()
                 
                 // Public API Endpoints
-                .requestMatchers(HttpMethod.GET, "/api/news", "/api/briefings/latest", "/api/investments/vitals", "/api/investments/history/**", "/api/investments/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/news", "/api/briefings/latest", "/api/investments/vitals", "/api/investments/macro-pods", "/api/investments/history/**", "/api/investments/events/**").permitAll()
                 .requestMatchers("/api/auth/status").permitAll()
                 
                 // Admin-Only Endpoints
