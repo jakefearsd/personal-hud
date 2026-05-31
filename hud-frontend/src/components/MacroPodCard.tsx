@@ -39,6 +39,11 @@ export const MacroPodCard: React.FC<Props> = ({ pod }) => {
               </div>
             ))}
           </div>
+          {pod.educationalDescription && (
+            <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+              <p>ℹ️ {pod.educationalDescription} {pod.learnMoreLink && <a href={pod.learnMoreLink} className="text-primary hover:underline">Learn more -&gt;</a>}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       

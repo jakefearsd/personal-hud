@@ -88,6 +88,8 @@ public class MacroMetricsController {
                 "economic_health",
                 "Economic Health",
                 sentimentService.generatePodSentiment("Treasury Yield Curves, Core Inflation, and broad market volatility (VIX)"),
+                "Economic health reflects the overall state of the economy, including inflation rates and market stability. Yield curves and inflation metrics are key indicators of future economic conditions.",
+                "https://www.investopedia.com/terms/e/economic-health.asp",
                 List.of(
                         new MacroPodMetric("10Y2Y", "Yield Curve (10y-2y)", -0.45, 12.5, 5.2),
                         new MacroPodMetric("CPI", "Core Inflation", 3.2, 85.0, -1.5),
@@ -100,6 +102,8 @@ public class MacroMetricsController {
                 "liquidity_credit",
                 "Liquidity & Credit",
                 sentimentService.generatePodSentiment("M2 Money Supply, Central Bank Balance Sheets, and High-Yield Corporate Credit Spreads"),
+                "Liquidity and credit conditions show how easily capital flows through the financial system. Tight credit spreads generally indicate economic confidence and low default risks.",
+                "https://www.investopedia.com/terms/l/liquidity.asp",
                 List.of(
                         new MacroPodMetric("M2", "M2 Money Supply", 20800.5, 95.0, 0.5),
                         new MacroPodMetric("HYSpread", "High-Yield Spread", 3.8, 40.0, -2.3)
@@ -111,6 +115,8 @@ public class MacroMetricsController {
                 "global_flows",
                 "Global Flows",
                 sentimentService.generatePodSentiment("US Dollar Index (DXY), Global Commodities (Oil/Gold), and Emerging Markets"),
+                "Global flows track the movement of capital across international borders and commodities. A strong US Dollar often pressures global commodities and emerging markets.",
+                "https://www.investopedia.com/terms/c/capital-flow.asp",
                 List.of(
                         new MacroPodMetric("DX-Y.NYB", "US Dollar Index", 104.2, 75.0, 0.8),
                         new MacroPodMetric("GC=F", "Gold", 2350.4, 98.0, 1.2),
@@ -123,6 +129,8 @@ public class MacroMetricsController {
                 "valuations",
                 "Historical Valuations",
                 sentimentService.generatePodSentiment("P/E ratios for major US and European indices mapped against historical percentiles"),
+                "Historical valuations compare current market prices to historical averages using metrics like the P/E ratio. This helps identify whether markets are relatively overvalued or undervalued.",
+                "https://www.investopedia.com/terms/v/valuation.asp",
                 List.of(
                         new MacroPodMetric("SPX_PE", "S&P 500 P/E", 24.5, 92.0, 1.5),
                         new MacroPodMetric("STOXX_PE", "Euro Stoxx 50 P/E", 14.2, 55.0, 0.3)

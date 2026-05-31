@@ -95,5 +95,7 @@ export interface MacroPod {
   id: string;
   title: string;
   sentimentNarrative: string;
+  educationalDescription?: string;
+  learnMoreLink?: string;
   metrics: MacroPodMetric[];
 }

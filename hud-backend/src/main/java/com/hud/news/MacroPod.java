@@ -9,14 +9,18 @@ public class MacroPod {
     private String id;
     private String title;
     private String sentimentNarrative;
+    private String educationalDescription;
+    private String learnMoreLink;
     private List<MacroPodMetric> metrics = new ArrayList<>();
 
     public MacroPod() {}
 
-    public MacroPod(String id, String title, String sentimentNarrative, List<MacroPodMetric> metrics) {
+    public MacroPod(String id, String title, String sentimentNarrative, String educationalDescription, String learnMoreLink, List<MacroPodMetric> metrics) {
         this.id = id;
         this.title = title;
         this.sentimentNarrative = sentimentNarrative;
+        this.educationalDescription = educationalDescription;
+        this.learnMoreLink = learnMoreLink;
         this.metrics = metrics != null ? new ArrayList<>(metrics) : new ArrayList<>();
     }
 
@@ -27,6 +31,12 @@ public class MacroPod {
     public void setTitle(String title) { this.title = title; }
     public String getSentimentNarrative() { return sentimentNarrative; }
     public void setSentimentNarrative(String sentimentNarrative) { this.sentimentNarrative = sentimentNarrative; }
+    
+    public String getEducationalDescription() { return educationalDescription; }
+    public void setEducationalDescription(String educationalDescription) { this.educationalDescription = educationalDescription; }
+    
+    public String getLearnMoreLink() { return learnMoreLink; }
+    public void setLearnMoreLink(String learnMoreLink) { this.learnMoreLink = learnMoreLink; }
     
     public List<MacroPodMetric> getMetrics() { 
         return metrics != null ? Collections.unmodifiableList(metrics) : Collections.emptyList(); 
@@ -44,12 +54,14 @@ public class MacroPod {
         return Objects.equals(id, macroPod.id) &&
                Objects.equals(title, macroPod.title) &&
                Objects.equals(sentimentNarrative, macroPod.sentimentNarrative) &&
+               Objects.equals(educationalDescription, macroPod.educationalDescription) &&
+               Objects.equals(learnMoreLink, macroPod.learnMoreLink) &&
                Objects.equals(metrics, macroPod.metrics);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, sentimentNarrative, metrics);
+        return Objects.hash(id, title, sentimentNarrative, educationalDescription, learnMoreLink, metrics);
     }
 
     @Override
@@ -58,6 +70,8 @@ public class MacroPod {
                 "id='" + id + '\'' +
                 ", title='" + title + '\'' +
                 ", sentimentNarrative='" + sentimentNarrative + '\'' +
+                ", educationalDescription='" + educationalDescription + '\'' +
+                ", learnMoreLink='" + learnMoreLink + '\'' +
                 ", metrics=" + metrics +
                 '}';
     }
