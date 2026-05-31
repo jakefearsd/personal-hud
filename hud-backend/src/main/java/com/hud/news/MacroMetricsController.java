@@ -11,13 +11,19 @@ public class MacroMetricsController {
     private final MacroMetricsService service;
     private final PredictionService predictionService;
     private final MacroSentimentService sentimentService;
+    private final WeeklyInsightRepository insightRepository;
+    private final WeeklyInsightsPipeline pipeline;
 
     public MacroMetricsController(MacroMetricsService service, 
                                   PredictionService predictionService,
-                                  MacroSentimentService sentimentService) {
+                                  MacroSentimentService sentimentService,
+                                  WeeklyInsightRepository insightRepository,
+                                  WeeklyInsightsPipeline pipeline) {
         this.service = service;
         this.predictionService = predictionService;
         this.sentimentService = sentimentService;
+        this.insightRepository = insightRepository;
+        this.pipeline = pipeline;
     }
 
     @GetMapping("/vitals")
@@ -61,6 +67,18 @@ public class MacroMetricsController {
     public String triggerPredictions() {
         predictionService.generateDailyPredictions();
         return "Market predictions triggered.";
+    }
+
+    @GetMapping("/insights/latest")
+    public WeeklyInsight getLatestInsight() {
+        return insightRepository.findTopByOrderByGeneratedAtDesc().orElse(null);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/insights/trigger")
+    public String triggerInsights() {
+        pipeline.runPipeline();
+        return "Insight pipeline triggered.";
     }
 
     @GetMapping("/macro-pods")

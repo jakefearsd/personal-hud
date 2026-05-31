@@ -18,13 +18,17 @@ class MacroMetricsControllerTest {
     private PredictionService predictionService;
     @Mock
     private MacroSentimentService sentimentService;
+    @Mock
+    private WeeklyInsightRepository insightRepository;
+    @Mock
+    private WeeklyInsightsPipeline pipeline;
 
     private MacroMetricsController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new MacroMetricsController(service, predictionService, sentimentService);
+        controller = new MacroMetricsController(service, predictionService, sentimentService, insightRepository, pipeline);
     }
 
     @Test
