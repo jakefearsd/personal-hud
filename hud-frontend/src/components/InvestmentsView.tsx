@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { MacroPod } from './types';
-import { RefreshCcw, BarChart2, Info } from 'lucide-react';
+import { RefreshCcw, Info } from 'lucide-react';
 import { apiFetch } from '../api';
-import { ComparisonDashboard } from './ComparisonDashboard';
 import { MarketPredictionDashboard } from './MarketPredictionDashboard';
 import { MacroPodCard } from './MacroPodCard';
 import { Button } from '@/components/ui/button';
@@ -28,14 +27,6 @@ export const InvestmentsView = () => {
       .then(() => fetchPods());
   };
 
-  const triggerCorrelation = () => {
-    setLoading(true);
-    apiFetch('/api/investments/correlate', { method: 'POST' })
-      .then(() => {
-          alert("Analytic correlation triggered. The engine is searching for catalysts in today's briefings.");
-          setLoading(false);
-      });
-  };
 
   useEffect(() => {
     fetchPods();
@@ -46,10 +37,6 @@ export const InvestmentsView = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold tracking-tight">Macro Intelligence Center</h2>
         <div className="flex gap-3">
-            <Button variant="outline" size="sm" className="gap-2" onClick={triggerCorrelation} disabled={loading}>
-              <BarChart2 className="h-4 w-4" />
-              Correlate Events
-            </Button>
             <Button variant="secondary" size="sm" className="gap-2" onClick={triggerRefresh} disabled={loading}>
               <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh Data
@@ -70,7 +57,6 @@ export const InvestmentsView = () => {
         Market data is delayed by 15 minutes. LLM sentiment analysis is completely objective and provides no direct tilt recommendations.
       </div>
 
-      <ComparisonDashboard metrics={[]} />
       <MarketPredictionDashboard />
     </div>
   );

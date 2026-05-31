@@ -9,19 +9,13 @@ import java.util.List;
 public class MacroMetricsController {
 
     private final MacroMetricsService service;
-    private final MarketEventRepository eventRepository;
-    private final EventCorrelationService correlationService;
     private final PredictionService predictionService;
     private final MacroSentimentService sentimentService;
 
     public MacroMetricsController(MacroMetricsService service, 
-                                  MarketEventRepository eventRepository,
-                                  EventCorrelationService correlationService,
                                   PredictionService predictionService,
                                   MacroSentimentService sentimentService) {
         this.service = service;
-        this.eventRepository = eventRepository;
-        this.correlationService = correlationService;
         this.predictionService = predictionService;
         this.sentimentService = sentimentService;
     }
@@ -36,10 +30,6 @@ public class MacroMetricsController {
         return service.getHistory(ticker);
     }
 
-    @GetMapping("/events/{ticker}")
-    public List<MarketEvent> getEvents(@PathVariable String ticker) {
-        return eventRepository.findByTickerOrderByTimestampDesc(ticker);
-    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/trigger")
@@ -48,12 +38,6 @@ public class MacroMetricsController {
         return "Macro update triggered.";
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/correlate")
-    public String triggerCorrelation() {
-        correlationService.correlateEvents();
-        return "Market correlation analysis triggered.";
-    }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/sync")

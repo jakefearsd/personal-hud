@@ -34,12 +34,15 @@ describe('HUD Intelligence Dashboard', () => {
     const navLink = await screen.findByRole('link', { name: /Investments/i });
     await user.click(navLink);
     
-    expect(await screen.findByText(/Macro Vitals Dashboard/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Macro Intelligence Center/i)).toBeInTheDocument();
     
-    // Use testId to isolate the vitals grid
-    const vitalsGrid = await screen.findByTestId('vitals-grid');
-    expect(within(vitalsGrid).getByText(/^S&P 500$/i)).toBeInTheDocument();
-    expect(within(vitalsGrid).getByText(/5,200.50/)).toBeInTheDocument();
+    // Check for the pods container
+    const podsContainer = document.querySelector('.pods-container');
+    expect(podsContainer).toBeInTheDocument();
+    
+    // Verify MSW data is rendered (from our updated handler)
+    expect(await screen.findByText(/Core Inflation/i)).toBeInTheDocument();
+    expect(await screen.findByText(/"The current market narrative is dominated by a productivity-debt paradox."/i)).toBeInTheDocument();
     
     // Use testId to isolate the prediction dashboard
     const predDashboard = await screen.findByTestId('prediction-dashboard');

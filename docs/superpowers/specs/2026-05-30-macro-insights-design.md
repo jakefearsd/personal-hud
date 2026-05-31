@@ -1,9 +1,11 @@
 # Macro Intelligence Center: Insights Engine Design
 
 ## 1. Overview
+
 Replace the existing Historical Correlation Engine with a new "Strategic Financial Considerations" insights section. This section will gather world events over a 6-12 week window using a hybrid API/scraping approach, summarize them using an LLM, and provide strategic insights for investors on a weekly cadence. Additionally, educational descriptions will be added to the four Macro Pods.
 
 ## 2. Frontend Architecture
+
 - **Macro Pod Updates**:
   - Extend the `MacroPod` TypeScript interface and backend DTO to include `educationalDescription` (2-3 sentences) and `learnMoreLink`.
   - Update `MacroPodCard.tsx` to render this educational context below the metric values.
@@ -15,6 +17,7 @@ Replace the existing Historical Correlation Engine with a new "Strategic Financi
   - Display the "12-Week Macro Narrative" and a bulleted list of "Key Considerations for Investors."
 
 ## 3. Backend Architecture & Data Flow
+
 - **Code Cleanup**:
   - Delete `EventCorrelationService.java`, `MarketEventRepository.java`, and the `MarketEvent` entity.
   - Remove the Flyway migrations/tables associated with `market_events` if possible, or drop the table in a new migration.
@@ -39,6 +42,7 @@ Replace the existing Historical Correlation Engine with a new "Strategic Financi
   - `POST /api/investments/insights/trigger`: Admin-only endpoint to force a manual generation run.
 
 ## 4. Error Handling & Testing
+
 - The frontend will display a graceful fallback if the insights fail to load.
 - If Playwright scraping fails for a specific article, the pipeline will log a warning and continue with the remaining articles.
 - The pipeline will be fully unit tested, mocking out the external API and LLM responses.

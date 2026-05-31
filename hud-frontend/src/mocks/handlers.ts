@@ -44,9 +44,16 @@ export const handlers = [
     ])
   }),
 
-  http.get('/api/investments/vitals', () => {
+  http.get('/api/investments/macro-pods', () => {
     return HttpResponse.json([
-      { ticker: '^GSPC', label: 'S&P 500', price: 5200.5, change: 10.5, changePercent: 0.2, updatedAt: new Date().toISOString() }
+      {
+        id: 'economic_health',
+        title: 'Economic Health',
+        sentimentNarrative: 'The current market narrative is dominated by a productivity-debt paradox.',
+        metrics: [
+          { ticker: 'CPI', label: 'Core Inflation', currentValue: 3.2, historicalPercentile: 85.0, changePercent: -1.5 }
+        ]
+      }
     ])
   }),
 
