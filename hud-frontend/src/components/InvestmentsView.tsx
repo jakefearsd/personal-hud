@@ -3,6 +3,7 @@ import type { MacroPod } from './types';
 import { RefreshCcw, Info } from 'lucide-react';
 import { apiFetch } from '../api';
 import { MarketPredictionDashboard } from './MarketPredictionDashboard';
+import { StrategicInsightsView } from './StrategicInsightsView';
 import { MacroPodCard } from './MacroPodCard';
 import { Button } from '@/components/ui/button';
 
@@ -57,6 +58,7 @@ export const InvestmentsView = () => {
         Market data is delayed by 15 minutes. LLM sentiment analysis is completely objective and provides no direct tilt recommendations.
       </div>
 
+      <StrategicInsightsView />
       <MarketPredictionDashboard />
     </div>
   );
