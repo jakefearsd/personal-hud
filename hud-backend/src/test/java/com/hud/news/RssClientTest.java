@@ -53,7 +53,7 @@ class RssClientTest {
     @Test
     void getLinksFromRss_returnsEmptyListOnError() throws Exception {
         when(mockHttpClient.send(ArgumentMatchers.any(HttpRequest.class), ArgumentMatchers.any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new RuntimeException("Network error"));
+                .thenThrow(new java.io.IOException("Network error"));
 
         List<String> links = rssClient.getLinksFromRss("http://fake.rss", 5);
         

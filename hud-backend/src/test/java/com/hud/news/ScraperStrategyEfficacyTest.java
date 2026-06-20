@@ -52,9 +52,8 @@ class ScraperStrategyEfficacyTest {
         // We use a subclass to avoid the hardcoded navigate call for testing
         IswScraperStrategy strategy = new IswScraperStrategy(10, BriefingCategory.THEATER_UKRAINE) {
             @Override
-            public List<String> scrape(Page page) {
+            protected void navigate(Page page) {
                 // Skip navigation and just run the extraction logic
-                return super.extractLinks(page);
             }
         };
 
@@ -73,8 +72,8 @@ class ScraperStrategyEfficacyTest {
 
         IswScraperStrategy strategy = new IswScraperStrategy(10, BriefingCategory.THEATER_MIDDLE_EAST) {
             @Override
-            public List<String> scrape(Page page) {
-                return super.extractLinks(page);
+            protected void navigate(Page page) {
+                // Skip navigation
             }
         };
 

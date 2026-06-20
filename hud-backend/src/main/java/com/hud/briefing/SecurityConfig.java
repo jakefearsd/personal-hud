@@ -13,10 +13,15 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -52,13 +57,13 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginProcessingUrl("/api/auth/login")
                 .successHandler((req, res, auth) -> {
-                    System.out.println("Login SUCCESS for user: " + auth.getName());
+                    logger.info("Login SUCCESS for user: {}", auth.getName());
                     res.setStatus(HttpServletResponse.SC_OK);
                     res.setContentType("application/json");
                     res.getWriter().write("{\"status\":\"success\"}");
                 })
                 .failureHandler((req, res, exp) -> {
-                    System.out.println("Login FAILURE for user: " + req.getParameter("username") + " - " + exp.getMessage());
+                    logger.warn("Login FAILURE for user: {} - {}", req.getParameter("username"), exp.getMessage());
                     res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
                     res.getWriter().write("{\"status\":\"error\",\"message\":\"Unauthorized\"}");

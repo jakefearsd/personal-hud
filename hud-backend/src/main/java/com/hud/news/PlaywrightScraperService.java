@@ -135,7 +135,7 @@ public class PlaywrightScraperService {
         if (htmlContent == null) return;
         
         Document doc = Jsoup.parse(htmlContent, targetUrl);
-        Elements links = doc.select("a[href]");
+        List<Element> links = doc.select("a[href]");
         int crawledCount = 0;
         URI baseUri = URI.create(targetUrl);
 
@@ -185,7 +185,7 @@ public class PlaywrightScraperService {
             return !path.contains("/about") && !path.contains("/contact") && 
                    !path.contains("/terms") && !path.contains("/privacy") && 
                    !path.contains("/search") && !path.endsWith(".pdf");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return false;
         }
     }

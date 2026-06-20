@@ -1,13 +1,19 @@
 package com.hud.news;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("unit")
-class DefaultContentCleanerTest {
+class MarkerRemovalCleanerTest {
 
-    private final DefaultContentCleaner cleaner = new DefaultContentCleaner();
+    private MarkerRemovalCleaner cleaner;
+
+    @BeforeEach
+    void setUp() {
+        cleaner = new MarkerRemovalCleaner();
+    }
 
     @Test
     void cleansIsWMetaData() {

@@ -77,7 +77,7 @@ public class BriefingProcessor {
     }
 
     private boolean isPlausibleContent(String text, String url) {
-        if (text == null || text.length() < 500) return false;
+        if (text.length() < 500) return false;
         String lower = text.toLowerCase(Locale.ROOT);
         boolean isAdOrCookie = lower.contains("before you continue")
                 || lower.contains("accept all cookies")

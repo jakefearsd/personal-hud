@@ -51,4 +51,41 @@ class MacroMetricsControllerTest {
         assertEquals("Macro update triggered.", response);
         verify(service).updateMacroMetrics();
     }
+
+    @Test
+    void testTriggerSync() {
+        String response = controller.triggerSync();
+        assertEquals("Historical data sync triggered.", response);
+        verify(service).syncHistoricalGaps();
+    }
+
+    @Test
+    void testPredictions() {
+        when(predictionService.getLatestPredictions()).thenReturn(List.of(new MarketPrediction()));
+        assertEquals(1, controller.getLatestPredictions().size());
+
+        when(predictionService.getHistory("AAPL")).thenReturn(List.of(new MarketPrediction()));
+        assertEquals(1, controller.getPredictionHistory("AAPL").size());
+
+        assertEquals("Market predictions triggered.", controller.triggerPredictions());
+        verify(predictionService).generateDailyPredictions();
+    }
+
+    @Test
+    void testInsights() {
+        when(insightRepository.findTopByOrderByGeneratedAtDesc()).thenReturn(java.util.Optional.of(new WeeklyInsight()));
+        assertNotNull(controller.getLatestInsight());
+
+        assertEquals("Insight pipeline triggered.", controller.triggerInsights());
+        verify(pipeline).runPipeline();
+    }
+
+    @Test
+    void testGetMacroPods() {
+        when(sentimentService.generatePodSentiment(anyString())).thenReturn("sentiment");
+        List<MacroPod> pods = controller.getMacroPods();
+        assertFalse(pods.isEmpty());
+        assertEquals(4, pods.size());
+        assertEquals("Economic Health", pods.get(0).getTitle());
+    }
 }

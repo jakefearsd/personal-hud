@@ -52,8 +52,11 @@ public class RssClient {
                 }
             }
             return links;
-        } catch (Exception e) {
+        } catch (java.io.IOException | InterruptedException e) {
             logger.error("[RSS] Failed to fetch links from {}: {}", rssUrl, e.getMessage());
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             return List.of();
         }
     }

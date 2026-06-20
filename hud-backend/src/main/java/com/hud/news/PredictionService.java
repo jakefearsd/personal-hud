@@ -125,8 +125,8 @@ public class PredictionService {
         String regime = "Unknown";
 
         // Find the synthesis paragraph (first multi-sentence line or line after REGIME)
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i].trim();
+        for (String rawLine : lines) {
+            String line = rawLine.trim();
             if (line.startsWith("REGIME |")) {
                 regime = line.substring(8).trim();
             } else if (line.startsWith("TAIL RISK |")) {

@@ -3,11 +3,10 @@ package com.hud.news;
 import org.springframework.stereotype.Component;
 
 /**
- * Default implementation of content cleaning.
+ * Concrete strategy for content cleaning.
  * Removes common footers and metadata markers.
  */
-@Component
-public class DefaultContentCleaner implements ContentCleaner {
+public class MarkerRemovalCleaner implements ContentCleaner {
 
     private static final String[] MARKERS = {
         "Endnotes", "Citations", "Technical Notes", "Authors:", 

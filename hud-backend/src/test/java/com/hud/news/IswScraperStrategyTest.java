@@ -26,10 +26,14 @@ class IswScraperStrategyTest {
     void scrape_handlesNavigationErrorAndReturnsEmptyList() {
         IswScraperStrategy strategy = new IswScraperStrategy(5, BriefingCategory.THEATER_UKRAINE);
         Page mockPage = mock(Page.class);
+        Locator mockLocator = mock(Locator.class);
         
         doThrow(new RuntimeException("Navigation failed")).when(mockPage)
             .navigate(ArgumentMatchers.anyString(), ArgumentMatchers.any());
             
+        when(mockPage.locator(ArgumentMatchers.anyString())).thenReturn(mockLocator);
+        when(mockLocator.all()).thenReturn(List.of());
+
         List<String> result = strategy.scrape(mockPage);
         
         assertTrue(result.isEmpty());
@@ -37,7 +41,10 @@ class IswScraperStrategyTest {
 
     @Test
     void extractLinks_filtersByCategory() {
-        IswScraperStrategy strategy = new IswScraperStrategy(2, BriefingCategory.THEATER_UKRAINE);
+        IswScraperStrategy strategy = new IswScraperStrategy(2, BriefingCategory.THEATER_UKRAINE) {
+            @Override
+            protected void navigate(Page page) {} // Skip navigation for test
+        };
         Page mockPage = mock(Page.class);
         Locator mockLocator = mock(Locator.class);
         
@@ -54,7 +61,7 @@ class IswScraperStrategyTest {
 
         when(mockLocator.all()).thenReturn(List.of(link1, link2, link3));
 
-        List<String> result = strategy.extractLinks(mockPage);
+        List<String> result = strategy.scrape(mockPage);
         
         assertEquals(2, result.size());
         assertTrue(result.contains("https://understandingwar.org/research/russia-ukraine-update-1"));
