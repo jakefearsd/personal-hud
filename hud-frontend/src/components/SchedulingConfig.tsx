@@ -92,7 +92,7 @@ export const SchedulingConfig = () => {
                   <Input 
                     value={s.cronExpression} 
                     onChange={e => handleCronChange(s, e.target.value)}
-                    className="h-6 w-32 border-none bg-transparent font-mono text-[10px] p-0 focus-visible:ring-0 text-white font-bold"
+                    className="h-6 w-56 border-none bg-transparent font-mono text-[10px] p-0 focus-visible:ring-0 text-white font-bold"
                   />
                   <Button variant="ghost" size="icon" className="h-6 w-6 text-[#79c0ff] hover:text-white" onClick={() => updateSchedule(s)}>
                     <Save className="h-3.5 w-3.5" />

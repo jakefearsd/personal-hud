@@ -266,9 +266,16 @@ const LlmConfigForm = ({ editingConfig, setEditingConfig, onSave, onReset, loadi
           />
         </div>
 
-        <Button className="w-full gap-2" onClick={onSave} disabled={loading}>
-          <Save className="h-4 w-4" /> {editingConfig.id ? 'Update Neural Configuration' : 'Establish Primary Brain'}
-        </Button>
+        <div className="flex gap-2">
+          {editingConfig.id && (
+            <Button variant="outline" className="w-1/3 gap-2 border-border/60 hover:bg-muted" onClick={onReset} disabled={loading}>
+              Cancel
+            </Button>
+          )}
+          <Button className={`gap-2 ${editingConfig.id ? 'w-2/3' : 'w-full'}`} onClick={onSave} disabled={loading}>
+            <Save className="h-4 w-4" /> {editingConfig.id ? 'Update Neural Configuration' : 'Establish Primary Brain'}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

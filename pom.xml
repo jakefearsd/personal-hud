@@ -27,9 +27,9 @@
         <testcontainers.version>1.21.4</testcontainers.version>
 
         <!-- Quality Tool Versions -->
-        <jacoco.version>0.8.12</jacoco.version>
-        <pmd.version>3.26.0</pmd.version>
-        <spotbugs.version>4.8.6.6</spotbugs.version>
+        <jacoco.version>0.8.15</jacoco.version>
+        <pmd.version>3.28.0</pmd.version>
+        <spotbugs.version>4.9.3.0</spotbugs.version>
 
         <surefire.excludedGroups>integration</surefire.excludedGroups>
     </properties>
@@ -52,7 +52,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
+                    <version>3.14.0</version>
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
@@ -62,7 +62,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.2.5</version>
+                    <version>3.5.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
